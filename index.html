@@ -2521,7 +2521,7 @@ async function claimCart(g,forUid,k){
     var ref=db.collection("cart").doc(g.id+"_"+n),sn=await ref.get();if(sn.exists&&sn.data()&&sn.data().at)continue;
     if(forUid){try{await ref.set({by:forUid,at:Date.now(),k:+k||0});return n}catch(e){continue}}
     if(!k)return 0;var fr=db.collection("gflights").doc(g.id+"_"+k);
-    try{await setMyC(fr,n);await ref.set({by:uid,at:Date.now(),k:+k});return n}catch(e){}
+    try{await setMyC(fr,n);await ref.set({by:uid,at:Date.now(),k:+k});return n}catch(e){/* regole precedenti: formato vecchio */try{await ref.set({by:uid,at:Date.now()});return n}catch(e2){}}
   }
   if(!forUid&&k){try{await setMyC(db.collection("gflights").doc(g.id+"_"+k),0)}catch(e){}}
   return 0;
