@@ -18,6 +18,13 @@ for (const [nome, opt] of [['pc', { viewport: { width: 1300, height: 900 } }], [
     gmAuth: window.gmAuth ? { anon: window.gmAuth.anon, admin: window.gmAuth.isAdmin, why: window.gmAuth.why } : 'assente',
     hashScript: [...document.scripts].length,
   }));
+  // controllo in sola lettura: con le regole nuove un visitatore non può leggere i vecchi lucchetti né i dati personali altrui
+  stato.regole = await pg.evaluate(async () => {
+    const db = await window.claude.use('db'); if (!db) return 'database non disponibile';
+    const prova = async (p) => { try { await db.doc(p).get(); return 'letto'; } catch (e) { return 'negato'; } };
+    return { lucchetti: await prova('leases/prova'), contattiAltrui: await prova('contacts/utente-inesistente'), teetimes: await prova('teetimes/prova') };
+  });
+  console.log('REGOLE ' + JSON.stringify(stato.regole));
   console.log(`\n===== ${nome} =====\n` + JSON.stringify(stato, null, 1));
   for (const h of ['#chisiamo', '#circolo', '#contatti', '#tee-time']) {
     await pg.evaluate((x) => { location.hash = x; }, h); await pg.waitForTimeout(2500);
