@@ -1,113 +1,245 @@
 rules_version = '2';
+// Regole di sicurezza del database del Golf Marediroma.
+// Tutto ciò che non è permesso qui sotto è vietato. I controlli valgono sul server di Google:
+// modificare il codice della pagina non serve a scavalcarli.
+// Orari: Firestore lavora in UTC, il circolo in Europe/Rome (UTC+1 d'inverno, UTC+2 d'estate);
+// i controlli usano UTC+1, quindi d'estate sono più larghi di un'ora, mai più stretti del sito.
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ================= Identità =================
     function signedIn() { return request.auth != null; }
-    // Amministratore = utente con email presente nella raccolta "admins" (ID documento = email in minuscolo)
+    function me() { return request.auth.uid; }
+    // Amministratore: accesso con email e password, email VERIFICATA, e documento admins/{email} creato dalla console
     function isAdmin() {
-      return signedIn() && request.auth.token.email != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
     }
-    function isMe(uid) { return signedIn() && request.auth.uid == uid; }
+    function isMe(uid) { return signedIn() && me() == uid; }
+    function dat(c, i) { return get(/databases/$(database)/documents/$(c)/$(i)).data; }
 
-    // Elenco amministratori: ognuno può solo verificare se stesso; si modifica solo dalla console
-    match /admins/{email} { allow read: if signedIn() && request.auth.token.email != null && request.auth.token.email.lower() == email; allow write: if false; }
+    // ================= Date e orari =================
+    function dayTs(d) { return timestamp.date(int(d.split('-')[0]), int(d.split('-')[1]), int(d.split('-')[2])); }
+    function hm(t) { return int(t.split(':')[0]) * 60 + int(t.split(':')[1]); }
+    function isDate(d) { return d is string && d.matches('^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'); }
+    function isHM(t) { return t is string && t.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'); }
+    // istante UTC di un orario del circolo
+    function at(d, m) { return dayTs(d) + duration.value(m - 60, 'm'); }
+    function orari() {
+      return exists(/databases/$(database)/documents/settings/orari)
+        ? dat('settings', 'orari')
+        : {'wk': '08:06', 'wkL': '16:42', 'we': '09:06', 'weL': '16:42', 'step': 12};
+    }
+    // l'orario fa parte della griglia dei tee time di quel giorno
+    function onGrid(d, m) {
+      let o = orari();
+      let we = dayTs(d).dayOfWeek() >= 6;
+      let a = hm(we ? o.we : o.wk);
+      let z = hm(we ? o.weL : o.wkL);
+      return m >= a && m <= z && (m - a) % int(o.step) == 0;
+    }
 
-    // ---- Prenotazioni condivise (tee time e partenze delle gare) ----
-    // Ogni posto è { n: giocatori totali, p: { uid: { n, at } } }: ciascuno può aggiungere,
-    // cambiare o togliere SOLO la propria voce, e il totale deve tornare e restare entro il limite.
-    function mine(d) { return d.p.get(request.auth.uid, {'n': 0}).n; }
+    // ================= Posti condivisi: tee time e partenze delle gare =================
+    // Ogni documento è { n: giocatori totali, p: { uid: { n, at, c? } } }:
+    // ciascuno può aggiungere, cambiare o togliere SOLO la propria voce, e il totale deve tornare.
+    function mine(d) { return d.p.get(me(), {'n': 0}).n; }
+    function myCart(d) { return d.p.get(me(), {}).get('c', 0); }
     function okMine(d) {
-      return !(request.auth.uid in d.p) || (
-        d.p[request.auth.uid] is map && d.p[request.auth.uid].keys().hasOnly(['n', 'at'])
-        && d.p[request.auth.uid].n is int && d.p[request.auth.uid].n >= 1 && d.p[request.auth.uid].n <= 4);
+      return !(me() in d.p) || (
+        d.p[me()] is map && d.p[me()].keys().hasOnly(['n', 'at', 'c'])
+        && d.p[me()].n is int && d.p[me()].n >= 1 && d.p[me()].n <= 4
+        && d.p[me()].at is int
+        && (!('c' in d.p[me()]) || (d.p[me()].c is int && d.p[me()].c >= 1 && d.p[me()].c <= 3)));
     }
     function okShare(od, cap) {
       let nd = request.resource.data;
       return signedIn() && od.p is map && nd.p is map && nd.n is int && nd.n >= 1 && nd.n <= cap
-        && nd.p.diff(od.p).affectedKeys().hasOnly([request.auth.uid])
+        && nd.p.diff(od.p).affectedKeys().hasOnly([me()])
         && okMine(nd)
         && nd.n == od.n - mine(od) + mine(nd);
     }
-    // Si può cancellare il documento solo se dentro resta soltanto la propria voce
-    function onlyMine() { return signedIn() && resource.data.p is map && resource.data.p.keys().hasOnly([request.auth.uid]); }
+    function grows(od) { return mine(request.resource.data) > mine(od); }
+    function onlyMine() { return signedIn() && resource.data.p is map && resource.data.p.keys().hasOnly([me()]); }
+    function EMPTY() { return {'n': 0, 'p': {}}; }
 
+    // ---- Tee time: id "AAAA-MM-GG_HHMM" ----
+    function teeDate(id) { return id.split('_')[0]; }
+    function teeMin(id) { return (int(id.split('_')[1]) / 100) * 60 + int(id.split('_')[1]) % 100; }
+    function teeId(id) { return id.matches('^20[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])_([01][0-9]|2[0-3])[0-5][0-9]$'); }
+    // prenotabile: nel futuro, entro 16 giorni, sulla griglia, giorno aperto, orario non riservato, nessuna gara in corso
+    function teeBookable(id) {
+      let d = teeDate(id);
+      let m = teeMin(id);
+      return at(d, m) > request.time
+        && at(d, m) < request.time + duration.value(16, 'd')
+        && onGrid(d, m)
+        && !exists(/databases/$(database)/documents/blocked/$(d))
+        && !exists(/databases/$(database)/documents/blockedslots/$(id))
+        && noGara(d, m);
+    }
+    function noGara(d, m) {
+      return !exists(/databases/$(database)/documents/gday/$(d)) || outside(dat('gday', d), m);
+    }
+    function outside(g, m) { return m < hm(g.from) || m > hm(g.to);
+    }
     match /teetimes/{id} {
       allow read: if true;
-      allow create: if isAdmin() || (id.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}')
+      allow create: if isAdmin() || (teeId(id)
         && request.resource.data.keys().hasOnly(['at', 'n', 'p']) && request.resource.data.at is int
-        && okShare({'n': 0, 'p': {}}, 4));
+        && okShare(EMPTY(), 4) && teeBookable(id));
       allow update: if isAdmin() || (request.resource.data.keys().hasOnly(['at', 'n', 'p'])
         && request.resource.data.at == resource.data.at
-        && okShare(resource.data, 4));
+        && okShare(resource.data, 4)
+        && (!grows(resource.data) || teeBookable(id)));
       allow delete: if isAdmin() || onlyMine();
     }
 
+    // ---- Gare ----
+    function gara(g) { return dat('gare', g); }
+    // iscrizioni aperte: gara non chiusa e non ancora finita (si può entrare fino al giorno stesso)
+    function garaOpen(g) { return isOpen(gara(g)); }
+    function isOpen(G) { return G.get('chiusa', false) != true && dayTs(G.date) + duration.value(23, 'h') > request.time; }
+    // dalle 12:00 del giorno prima: solo completare partenze già aperte, o aprirne una con almeno 3 giocatori (4 a coppie)
+    function lastMin(G) { return request.time >= dayTs(G.date) - duration.value(13, 'h'); }
+    function minNew(G, cap) { return G.get('coppie', false) == true ? (cap < 4 ? cap : 4) : (cap < 3 ? cap : 3); }
+    function flK(id) { return int(id.split('_')[1]); }
+    // la nuova partenza è coerente con la gara: shotgun = flight numerati; altrimenti un orario della griglia nella finestra della gara
+    function okNewFlight(id, nd, G) {
+      return G.get('shotgun', false) == true
+        ? (flK(id) >= 1 && flK(id) < 10000 && nd.cap == (G.get('coppie', false) == true ? 2 : 4))
+        : (flK(id) >= 10000 && nd.cap == 4 && isHM(nd.pref)
+           && flK(id) == 10000 + int(nd.pref.split(':')[0]) * 100 + int(nd.pref.split(':')[1])
+           && nd.pref >= G.from && nd.pref <= G.to && onGrid(G.date, hm(nd.pref)));
+    }
+    // si cambia il proprio cart solo dopo aver liberato quello precedente
+    function cartSwapOk(od) {
+      let oc = myCart(od);
+      return myCart(request.resource.data) == oc || cartFreeOf(od.gara, oc);
+    }
+    // il cart numero c della gara non è (più) mio
+    function cartFreeOf(g, c) {
+      return c == 0 || !exists(/databases/$(database)/documents/cart/$(g + '_' + string(c)))
+        || dat('cart', g + '_' + string(c)).by != me();
+    }
+    function okFlCreate(id) {
+      let nd = request.resource.data;
+      let G = gara(nd.gara);
+      return nd.keys().hasOnly(['gara', 'cap', 'n', 'p', 'pref', 'at'])
+        && nd.cap is int && nd.pref is string && nd.at is int
+        && okShare(EMPTY(), nd.cap)
+        && !('c' in nd.p[me()])
+        && isOpen(G)
+        && okNewFlight(id, nd, G)
+        && (!lastMin(G) || nd.n >= minNew(G, nd.cap));
+    }
     match /gflights/{id} {
       allow read: if true;
-      allow create: if isAdmin() || (request.resource.data.keys().hasOnly(['gara', 'cap', 'n', 'p', 'pref', 'at'])
-        && request.resource.data.gara is string && request.resource.data.gara.matches('[A-Za-z0-9]+')
-        && id.matches(request.resource.data.gara + '_[0-9]+')
-        && exists(/databases/$(database)/documents/gare/$(request.resource.data.gara))
-        && request.resource.data.cap is int && request.resource.data.cap >= 1 && request.resource.data.cap <= 4
-        && request.resource.data.pref is string && request.resource.data.at is int
-        && okShare({'n': 0, 'p': {}}, request.resource.data.cap));
-      allow update: if isAdmin() || (request.resource.data.keys().hasOnly(['gara', 'cap', 'n', 'p', 'pref', 'at'])
+      allow create: if isAdmin() || (signedIn()
+        && request.resource.data.gara is string && request.resource.data.gara.matches('^[A-Za-z0-9]{1,40}$')
+        && id.matches('^' + request.resource.data.gara + '_[0-9]{1,5}$')
+        && okFlCreate(id));
+      allow update: if isAdmin() || (
+        request.resource.data.keys().hasOnly(['gara', 'cap', 'n', 'p', 'pref', 'at'])
         && request.resource.data.gara == resource.data.gara && request.resource.data.cap == resource.data.cap
         && request.resource.data.pref == resource.data.pref && request.resource.data.at == resource.data.at
-        && okShare(resource.data, resource.data.cap));
-      allow delete: if isAdmin() || onlyMine();
+        && okShare(resource.data, resource.data.cap)
+        && (!grows(resource.data) || garaOpen(resource.data.gara))
+        && cartSwapOk(resource.data));
+      allow delete: if isAdmin() || (onlyMine() && cartFreeOf(resource.data.gara, myCart(resource.data)));
     }
 
-    // Cart delle gare: ognuno prende un cart libero a proprio nome e può liberare solo il proprio
+    // ---- Cart: id "<gara>_<1..3>"; lo prende solo chi è iscritto alla gara, uno per iscrizione ----
     match /cart/{id} {
       allow read: if true;
-      allow create: if isAdmin() || (signedIn() && id.matches('[A-Za-z0-9]+_[1-9]')
-        && request.resource.data.keys().hasOnly(['by', 'at'])
-        && request.resource.data.by == request.auth.uid && request.resource.data.at is int);
+      allow create: if isAdmin() || (signedIn() && id.matches('^[A-Za-z0-9]{1,40}_[1-3]$')
+        && request.resource.data.keys().hasOnly(['by', 'at', 'k'])
+        && request.resource.data.by == me() && request.resource.data.at is int && request.resource.data.k is int
+        && garaOpen(id.split('_')[0])
+        && dat('gflights', id.split('_')[0] + '_' + string(request.resource.data.k)).p.get(me(), {}).get('c', 0) == int(id.split('_')[1]));
       allow update: if isAdmin();
-      allow delete: if isAdmin() || (signedIn() && resource.data.by == request.auth.uid);
+      allow delete: if isAdmin() || (signedIn() && resource.data.by == me());
     }
 
-    // "Lucchetti" di pochi secondi contro le doppie prenotazioni: ognuno scrive solo i propri,
-    // e può prendere quello di un altro solo se è già scaduto
-    match /leases/{id} {
-      allow read: if signedIn();
-      allow create, update: if signedIn()
-        && request.resource.data.keys().hasOnly(['h', 'exp'])
-        && request.resource.data.h is string && request.resource.data.h.matches(request.auth.uid + '-[0-9]+')
-        && request.resource.data.exp is int && request.resource.data.exp <= request.time.toMillis() + 600000
-        && (resource == null || resource.data.exp < request.time.toMillis()
-            || resource.data.h.matches(request.auth.uid + '-[0-9]+'));
-      allow delete: if isAdmin();
+    // Vecchi "lucchetti" anti doppia prenotazione: non servono più (ora si usano le transazioni)
+    match /leases/{id} { allow read, write: if isAdmin(); }
+
+    // ================= Dati personali =================
+    function okEmail(e) { return e is string && e.size() <= 120 && e.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$'); }
+    function okTel(t) { return t is string && t.matches('^[+0-9 ().\\/-]{8,25}$'); }
+    function okName(x) { return x is string && x.size() >= 1 && x.size() <= 60; }
+    function okP(x) { return x is map && x.keys().hasOnly(['first', 'last']) && okName(x.first) && okName(x.last); }
+    function okPlayers(l) {
+      return l is list && l.size() >= 1 && l.size() <= 4 && okP(l[0])
+        && (l.size() < 2 || okP(l[1])) && (l.size() < 3 || okP(l[2])) && (l.size() < 4 || okP(l[3]));
+    }
+    // si controllano le voci nuove o modificate (al massimo 2 per volta) e la dimensione dell'elenco
+    function added(od) { return request.resource.data.list.removeAll(od.list); }
+    function okShape() {
+      return request.resource.data.keys().hasOnly(['list']) && request.resource.data.list is list
+        && request.resource.data.list.size() <= 200;
+    }
+    function okContacts(od) {
+      let a = added(od);
+      return okShape() && a.size() <= 2 && (a.size() < 1 || okContact(a[0])) && (a.size() < 2 || okContact(a[1]));
+    }
+    function okIscrizioni(od) {
+      let a = added(od);
+      return okShape() && a.size() <= 2 && (a.size() < 1 || okIscr(a[0])) && (a.size() < 2 || okIscr(a[1]));
+    }
+    function okContact(x) {
+      return x is map && x.keys().hasOnly(['slot', 'email', 'tel', 'players', 'at'])
+        && x.slot is string && teeId(x.slot) && okEmail(x.email) && okTel(x.tel) && okPlayers(x.players) && x.at is int;
+    }
+    function okIscr(x) {
+      return x is map && x.keys().hasOnly(['gara', 'flight', 'players', 'email', 'tel', 'pref', 'cart', 'cartSlot', 'at'])
+        && x.gara is string && x.gara.matches('^[A-Za-z0-9]{1,40}$') && x.flight is int
+        && okPlayers(x.players) && okEmail(x.email) && okTel(x.tel)
+        && x.pref is string && x.pref.size() <= 5 && x.cart is bool
+        && (x.cartSlot == null || (x.cartSlot is int && x.cartSlot >= 1 && x.cartSlot <= 3)) && x.at is int;
+    }
+    // Contatti dei tee time e iscrizioni alle gare: ognuno vede e scrive solo i propri, gli amministratori leggono tutto
+    match /contacts/{uid} {
+      allow read: if isAdmin() || isMe(uid);
+      allow create: if isMe(uid) && okContacts({'list': []});
+      allow update: if isMe(uid) && okContacts(resource.data);
+      allow delete: if isMe(uid) || isAdmin();
+    }
+    match /iscrizioni/{uid} {
+      allow read: if isAdmin() || isMe(uid);
+      allow create: if isMe(uid) && okIscrizioni({'list': []});
+      allow update: if isMe(uid) && okIscrizioni(resource.data);
+      allow delete: if isMe(uid) || isAdmin();
     }
 
-    // Gare, orari bloccati, testi dell'assistente: tutti leggono, solo gli amministratori scrivono
+    // ================= Contenuti gestiti dal circolo =================
+    // Elenco amministratori: ognuno può solo verificare se stesso; si modifica solo dalla console
+    match /admins/{email} {
+      allow read: if signedIn() && request.auth.token.email != null && request.auth.token.email.lower() == email;
+      allow write: if false;
+    }
+    // Pubblici in lettura, scritti solo dagli amministratori
     match /gare/{id}         { allow read: if true; allow write: if isAdmin(); }
+    match /gday/{d}          { allow read: if true; allow write: if isAdmin(); }   // fascia oraria delle gare di ogni giorno
     match /blockedslots/{id} { allow read: if true; allow write: if isAdmin(); }
     match /blocked/{id}      { allow read: if true; allow write: if isAdmin(); }
     match /settings/{id}     { allow read: if true; allow write: if isAdmin(); }
-
-    // Locandine e regolamenti salvati nel database: tutti li vedono, solo gli amministratori li caricano
     match /allegati/{id}     { allow read: if true; allow write: if isAdmin(); }
-
-    // Dati personali (nomi ed email): ognuno vede e scrive solo i propri, gli amministratori leggono tutto
-    match /contacts/{uid}   { allow read: if isAdmin() || isMe(uid); allow write: if isMe(uid); }
-    match /iscrizioni/{uid} { allow read: if isAdmin() || isMe(uid); allow write: if isMe(uid); }
-
-    // Flight ufficiali e anagrafica giocatori con HCP: solo gli amministratori
+    match /recensioni/{id}   { allow read: if true; allow write: if isAdmin(); }
+    // Riservati agli amministratori
     match /giocatori/{id} { allow read, write: if isAdmin(); }
     match /storico/{id}   { allow read, write: if isAdmin(); }
-
-    // Recensioni: pubblicate (le leggono tutti) e proposte dai giocatori (le vede solo il circolo)
-    match /recensioni/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Recensioni proposte dai giocatori: le vede solo il circolo
     match /proposte/{id} {
-      allow create: if signedIn() && id.matches(request.auth.uid + '_[0-9]+')
-        && request.resource.data.keys().hasOnly(['n','s','t','by','at'])
-        && request.resource.data.by == request.auth.uid
-        && request.resource.data.n is string && request.resource.data.n.size() <= 60
-        && request.resource.data.t is string && request.resource.data.t.size() <= 600
-        && request.resource.data.s is int && request.resource.data.s >= 1 && request.resource.data.s <= 5;
+      allow create: if signedIn() && id.matches('^' + me() + '_[0-9]{1,15}$')
+        && request.resource.data.keys().hasOnly(['n', 's', 't', 'by', 'at'])
+        && request.resource.data.by == me()
+        && okName(request.resource.data.n)
+        && request.resource.data.t is string && request.resource.data.t.size() >= 1 && request.resource.data.t.size() <= 600
+        && request.resource.data.s is int && request.resource.data.s >= 1 && request.resource.data.s <= 5
+        && request.resource.data.at is int;
       allow read, update, delete: if isAdmin();
     }
   }

@@ -1,0 +1,18 @@
+{
+  "name": "golf-marediroma-test-sicurezza",
+  "private": true,
+  "type": "module",
+  "description": "Test automatici delle regole di sicurezza Firestore e del sito contro Firebase Emulator (mai il database vero).",
+  "scripts": {
+    "pretest": "node -e \"require('fs').copyFileSync('../firestore.rules','firestore.rules')\"",
+    "test": "firebase emulators:exec --only firestore,auth --project demo-golf \"node --test regole.test.mjs && node --test sito.test.mjs\"",
+    "pretest:regole": "node -e \"require('fs').copyFileSync('../firestore.rules','firestore.rules')\"",
+    "test:regole": "firebase emulators:exec --only firestore --project demo-golf \"node --test regole.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.1.0",
+    "firebase-tools": "^13.29.1",
+    "playwright": "^1.49.1"
+  }
+}
