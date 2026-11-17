@@ -870,19 +870,28 @@ function setHref(a,id){if(/^db:/.test(id||"")){a.href="#";a.onclick=function(e){
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInAnonymously,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getFirestore,collection,doc,onSnapshot,getDoc,setDoc,deleteDoc,runTransaction} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getAuth,onAuthStateChanged,signInAnonymously,signInWithEmailAndPassword,signOut,sendEmailVerification,connectAuthEmulator} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {initializeAppCheck,ReCaptchaV3Provider} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+import {getFirestore,collection,doc,onSnapshot,getDoc,setDoc,deleteDoc,runTransaction,connectFirestoreEmulator} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig={apiKey:"AIzaSyA98wERvS78saXUXZ0wM_SQkqo7zBDRrwY",authDomain:"sitogolfmarediroma.firebaseapp.com",projectId:"sitogolfmarediroma",storageBucket:"sitogolfmarediroma.firebasestorage.app",messagingSenderId:"126050349740",appId:"1:126050349740:web:ebf6d03ec2660fb1096509"};
 try{
-  const app=initializeApp(firebaseConfig),auth=getAuth(app),fs=getFirestore(app);
+  const app=initializeApp(firebaseConfig);
+  /* Firebase App Check: incolla qui la chiave del sito reCAPTCHA v3 registrata in Firebase Console > App Check */
+  const APPCHECK_KEY="";
+  /* Test automatici: sul proprio computer con ?emu=1 il sito usa l'emulatore Firebase invece del database vero */
+  const EMU=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&/[?&]emu=1/.test(location.search);
+  if(APPCHECK_KEY&&!EMU){try{initializeAppCheck(app,{provider:new ReCaptchaV3Provider(APPCHECK_KEY),isTokenAutoRefreshEnabled:true})}catch(e){console.warn("App Check non attivo",e)}}
+  const auth=getAuth(app),fs=getFirestore(app);
+  if(EMU){connectAuthEmulator(auth,"http://127.0.0.1:9099",{disableWarnings:true});connectFirestoreEmulator(fs,"127.0.0.1",8080)}
   let u=await new Promise(res=>{const off=onAuthStateChanged(auth,x=>{off();res(x)})});
   if(!u){try{u=(await signInAnonymously(auth)).user}catch(e){console.warn("Accesso anonimo non attivo",e);u=null}}
+  if(u&&u.email&&!u.emailVerified){try{await u.reload();u=auth.currentUser;if(u&&u.emailVerified)await u.getIdToken(true)}catch(e){}}
   let isAdm=false,admWhy="";if(u&&u.email){try{isAdm=(await getDoc(doc(fs,"admins",u.email.toLowerCase()))).exists();if(!isAdm)admWhy="nodoc"}catch(e){isAdm=false;admWhy=(e&&e.code)||"error";console.warn("Controllo amministratore",e)}}
   const W=s=>({id:s.id,exists:s.exists(),data:()=>s.exists()?s.data():undefined});
   const D=path=>{const r=doc(fs,path);return{
     get:async()=>W(await getDoc(r)),set:d=>setDoc(r,d),update:d=>setDoc(r,d,{merge:true}),delete:()=>deleteDoc(r),
     onSnapshot:(nx,er)=>onSnapshot(r,s=>nx(W(s)),e=>er&&er(e)),
-    acquire:async o=>{const lr=doc(fs,"leases",path.replace(/\//g,"__"));try{return await runTransaction(fs,async t=>{const s=await t.get(lr),now=Date.now();if(s.exists()&&s.data().exp>now&&s.data().h!==o.holder)return{acquired:false};t.set(lr,{h:o.holder,exp:now+(o.ttlMs||30000)});return{acquired:true}})}catch(e){return{acquired:false}}},
+    tx:fn=>runTransaction(fs,async t=>{const s=await t.get(r),nx=await fn(s.exists()?s.data():null);if(nx===undefined)return;if(nx===null)t.delete(r);else t.set(r,nx)}),
     collection:n=>C(path+"/"+n)}};
   const C=path=>{const r=collection(fs,path);return{
     doc:id=>id?D(path+"/"+id):D(doc(r).path),
@@ -905,7 +914,8 @@ try{
     for(let i=0;i<md.parts;i++){const c=await getDoc(doc(fs,"allegati",id+"_"+i));b64+=c.exists()?c.data().d:""}
     const bin=atob(b64),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
     return cache[id]=URL.createObjectURL(new Blob([arr],{type:md.type||"application/octet-stream"}))}catch(e){console.warn("Allegato non disponibile",e);return ""}};
-  window.gmAuth={isAdmin:isAdm,why:admWhy,anon:!u,email:u&&u.email||null,
+  window.gmAuth={isAdmin:isAdm,why:admWhy,anon:!u,email:u&&u.email||null,verified:!!(u&&u.emailVerified),
+    sendVerify:async()=>{if(u)await sendEmailVerification(u)},
     login:async(e,p)=>{await signInWithEmailAndPassword(auth,e,p);location.reload()},
     logout:async()=>{await signOut(auth);location.reload()}};
   window.__fbResolve({use:n=>({db:u?db:null,user:user,assets:assets})[n]||null});
@@ -1284,6 +1294,10 @@ try{
 <table><tbody id="bookList"></tbody></table>
 <h3 style="margin-top:2rem" id="adm-admin">Chi può amministrare</h3>
 <p>Gli amministratori sono gli utenti creati in Firebase Authentication la cui email è nell'elenco «admins» del database.</p>
+<h3 style="margin-top:2rem" id="adm-sic">Sicurezza del database</h3>
+<p id="secInfo" class="note">Controllo in corso…</p>
+<p><button class="btn alt sm" id="secBak" type="button">Scarica copia di sicurezza</button> <button class="btn sm" id="secMig" type="button" disabled>Aggiorna il formato</button></p>
+<p class="msg" id="secMsg" role="status"></p>
 </div>
 </div></section>
 
@@ -1704,6 +1718,11 @@ function longDate(){var d=days.filter(function(x){return iso(x)===selDate})[0];r
 function postiTxt(n){return n===1?"1 posto libero":n+" posti liberi"}
 function partsOf(b){if(!b)return [];if(b.p&&typeof b.p==="object"&&!Array.isArray(b.p))return Object.keys(b.p).map(function(k){var v=b.p[k]||{};return {by:k,n:+v.n||0,at:+v.at||0}});if(Array.isArray(b.parts))return b.parts;return [{by:b.by||"",n:+b.n||(Array.isArray(b.players)?b.players.length:4),at:b.at||0}]}
 function pMap(pa){var m={};pa.forEach(function(x){var k=x.by||"legacy",n=+x.n||0;if(n<=0)return;if(m[k]){m[k].n+=n;m[k].at=Math.min(m[k].at,+x.at||0)}else m[k]={n:n,at:+x.at||0}});return m}
+function pOf(cur){if(cur&&cur.p&&typeof cur.p==="object"&&!Array.isArray(cur.p)){var o={};Object.keys(cur.p).forEach(function(k){o[k]=Object.assign({},cur.p[k])});return o}return pMap(partsOf(cur))}
+function nOf(cur){return !cur?0:(cur.p&&typeof cur.p==="object"&&!Array.isArray(cur.p))?(+cur.n||0):pSum(partsOf(cur))}
+/* Lettura e scrittura atomica di un documento: sul sito vero è una transazione Firestore (niente doppie prenotazioni) */
+async function txDoc(ref,fn){if(ref.tx)return ref.tx(fn);var sn=await ref.get(),cur=sn.exists?(sn.data()||null):null,nx=await fn(cur);if(nx===undefined)return;if(nx===null)await ref.delete();else await ref.set(nx)}
+function nmOk(l){return l.every(function(p){return p.first.length<=60&&p.last.length<=60})}
 function pSum(pa){return pa.reduce(function(a,x){return a+(+x.n||0)},0)}
 function slotInfo(id){var q=partsOf(booked[id]);return {parts:q,n:q.reduce(function(t,x){return t+(+x.n||0)},0)}}
 function pick(t){selSlot=t;var fr=4-slotInfo(selDate+"_"+t.replace(":","")).n;$("bookTitle").textContent="Tee time alle "+t+" di "+longDate()+(fr<4?" ("+postiTxt(fr)+")":"");
@@ -2214,16 +2233,15 @@ async function bookSlot(date,t,names,em,tel){
   if(!names.length||names.length>4)throw new Error("Servono da 1 a 4 giocatori.");
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em))throw new Error("Serve un'email valida del giocatore 1.");
   if(!telOk(tel))throw new Error("Serve un numero di telefono valido del giocatore 1.");tel=String(tel).trim();
-  var ref=db.collection("teetimes").doc(id),ls=await ref.acquire({holder:uid+"-"+Date.now(),ttlMs:8000});
-  if(!ls.acquired)throw new Error("Qualcuno sta prenotando questo orario proprio ora. Riprova tra qualche secondo.");
-  var sn=await ref.get(),cur=(sn.exists&&sn.data()&&sn.data().at)?sn.data():null,pa=partsOf(cur).slice(),used=pa.reduce(function(a,x){return a+(+x.n||0)},0);
-  if(used+names.length>4)throw new Error(used>=4?"Questo orario è completo.":"In questo orario resta "+(4-used===1?"solo 1 posto libero.":"posto per "+(4-used)+" giocatori."));
-  var mi=-1;pa.forEach(function(x,i){if(x.by===uid)mi=i});
-  if(mi>=0)pa[mi]={by:uid,n:(+pa[mi].n||0)+names.length,at:pa[mi].at};else pa.push({by:uid,n:names.length,at:Date.now()});
-  await ref.set({at:(cur&&cur.at)||Date.now(),n:used+names.length,p:pMap(pa)});
+  if(!nmOk(names))throw new Error("Nome e cognome possono avere al massimo 60 caratteri.");
+  var ref=db.collection("teetimes").doc(id),used=0;
+  await txDoc(ref,function(cur){cur=cur&&cur.at?cur:null;used=nOf(cur);
+    if(used+names.length>4)throw new Error(used>=4?"Questo orario è completo.":"In questo orario resta "+(4-used===1?"solo 1 posto libero.":"posto per "+(4-used)+" giocatori."));
+    var p=pOf(cur),m=p[uid];p[uid]=m?Object.assign(m,{n:(+m.n||0)+names.length}):{n:names.length,at:Date.now()};
+    return {at:cur?cur.at:Date.now(),n:used+names.length,p:p}});
   try{var cr=db.doc("contacts/"+uid),cs=await cr.get(),cl=(cs.exists&&(cs.data().list||[]))||[],old=null;cl=cl.filter(function(x){if(x.slot===id){old=x;return false}return true});
     cl.push({slot:id,email:em,tel:tel,players:((old&&old.players)||[]).concat(names),at:Date.now()});await cr.set({list:cl})}
-  catch(e){try{if(cur)await ref.set(cur);else await ref.delete()}catch(e2){}throw new Error("Non è stato possibile registrare i dati di contatto: la prenotazione non è stata effettuata. Riprova.")}
+  catch(e){try{await teeSub(id,names.length)}catch(e2){}throw new Error("Non è stato possibile registrare i dati di contatto: la prenotazione non è stata effettuata. Riprova.")}
   mailConf(em,"Conferma tee time – "+dLabel(date)+" alle "+t+" – Golf Marediroma",{
     "Conferma":"La prenotazione del tee time al Golf Marediroma è registrata.","Giorno":dLong(date),"Ora di partenza":t,
     "Giocatori":names.map(nmOf).join(", ")+" ("+names.length+(names.length===1?" giocatore":" giocatori")+")","Email giocatore 1":em,"Telefono giocatore 1":tel,
@@ -2245,9 +2263,13 @@ $("go").onclick=async function(){
   catch(e){err(e&&e.message?e.message:"Non è stato possibile salvare la prenotazione. Riprova.")}
   $("go").disabled=false;
 };
+/* toglie dal tee time i propri giocatori (n), o tutta la propria voce se n manca */
+async function teeSub(id,n){
+  await txDoc(db.collection("teetimes").doc(id),function(cur){if(!cur||!cur.at)return undefined;var p=pOf(cur),m=p[uid];if(!m)return undefined;
+    var dec=n?Math.min(n,+m.n||0):(+m.n||0);m.n=(+m.n||0)-dec;if(m.n<=0)delete p[uid];var tot=nOf(cur)-dec;
+    if(!Object.keys(p).length||tot<=0)return null;return {at:cur.at,n:tot,p:p}})}
 async function doCancelTee(id){
-  var ref=db.collection("teetimes").doc(id),sn=await ref.get();
-  if(sn.exists){var cur=sn.data(),pa=partsOf(cur).filter(function(x){return x.by!==uid});if(pa.length)await ref.set({at:cur.at,n:pSum(pa),p:pMap(pa)});else await ref.delete()}
+  await teeSub(id,0);
   var mine=null;
   try{var cr=db.doc("contacts/"+uid),cs=await cr.get();if(cs.exists){var cl=cs.data().list||[];mine=cl.filter(function(x){return x.slot===id})[0]||null;await cr.set({list:cl.filter(function(x){return x.slot!==id})})}}catch(e2){}
   if(mine&&mine.email){var d=id.slice(0,10),t=id.slice(11,13)+":"+id.slice(13,15);
@@ -2271,9 +2293,33 @@ async function adminCancel(id,t){
   if(!confirm("Annullare tutte le prenotazioni delle "+t+" ("+who(id)+")? I giocatori riceveranno un'email."))return;
   try{await db.collection("teetimes").doc(id).delete();mailAdmCancel(id,"");flash("Prenotazioni delle "+t+" annullate: i giocatori riceveranno un'email.")}catch(e){flash("Non è stato possibile annullare.")}
 }
-var MIG={};
-function secMig(col,id,v){if(MIG[col+id]||!db)return;MIG[col+id]=1;var pa=partsOf(v),o=col==="teetimes"?{at:+v.at||Date.now(),n:pSum(pa),p:pMap(pa)}:{gara:String(v.gara||id.replace(/_\d+$/,"")),cap:+v.cap||4,n:pSum(pa),p:pMap(pa),pref:v.pref||"",at:+v.at||Date.now()};
-  if(!o.n){db.collection(col).doc(id).delete().catch(function(){});return}db.collection(col).doc(id).set(o).catch(function(e){console.warn("Conversione non riuscita",col,id,e)})}
+/* ---- Sicurezza del database: copia di sicurezza, conversione al formato sicuro, fasce orarie delle gare ---- */
+var GFRAW={},CARTRAW={},GDAY={},GDAY_OK=false,SEC_BAK=false;
+function legacyDocs(){var out=[];Object.keys(booked).forEach(function(id){var v=booked[id];if(v&&!(v.p&&typeof v.p==="object"&&!Array.isArray(v.p)))out.push(["teetimes",id,v])});
+  Object.keys(GFRAW).forEach(function(id){var v=GFRAW[id];if(v&&v.at&&!(v.p&&typeof v.p==="object"&&!Array.isArray(v.p)))out.push(["gflights",id,v])});return out}
+function migDoc(col,id,v){var pa=partsOf(v),p=pMap(pa),n=pSum(pa);
+  if(col==="teetimes")return {at:+v.at||Date.now(),n:n,p:p};
+  return {gara:String(v.gara||id.replace(/_\d+$/,"")),cap:+v.cap||4,n:n,p:p,pref:String(v.pref||""),at:+v.at||Date.now()}}
+function gdayWant(){var w={};Object.keys(gare).forEach(function(id){var g=gare[id];if(!g||!g.date||!/^\d\d:\d\d$/.test(g.from||"")||!/^\d\d:\d\d$/.test(g.to||""))return;
+  var x=w[g.date];if(!x)w[g.date]={from:g.from,to:g.to};else{if(g.from<x.from)x.from=g.from;if(g.to>x.to)x.to=g.to}});return w}
+var gdT=null;
+function gdaySync(){if(!canAdmin||!db||!GDAY_OK)return;clearTimeout(gdT);gdT=setTimeout(async function(){var w=gdayWant(),t0=iso(days[0]);
+  for(var d in w){var c=GDAY[d];if(!c||c.from!==w[d].from||c.to!==w[d].to){try{await db.collection("gday").doc(d).set({from:w[d].from,to:w[d].to,at:Date.now()})}catch(e){}}}
+  for(var d2 in GDAY){if(!w[d2]&&d2>=t0){try{await db.collection("gday").doc(d2).delete()}catch(e){}}}},1500)}
+function renderSec(){var el0=$("secInfo");if(!el0||!canAdmin)return;var L=legacyDocs(),nt=L.filter(function(x){return x[0]==="teetimes"}).length,nf=L.length-nt;
+  el0.textContent=L.length?("Da aggiornare al formato sicuro: "+nt+(nt===1?" tee time":" tee time")+" e "+nf+(nf===1?" partenza di gara.":" partenze di gare.")+" Prima scarica la copia di sicurezza, poi premi «Aggiorna il formato».")
+    :"Tutte le prenotazioni sono già nel formato sicuro: puoi pubblicare le nuove regole del database.";
+  var b=$("secMig");if(b)b.disabled=!L.length||!SEC_BAK}
+async function secBackup(){var data={creato:new Date().toISOString(),teetimes:booked,gflights:GFRAW,cart:CARTRAW,gare:gare};
+  var bl=new Blob([JSON.stringify(data,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download="golf-marediroma-copia-prenotazioni-"+iso(new Date())+".json";
+  document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},2000);SEC_BAK=true;renderSec()}
+async function secMigrate(){var L=legacyDocs(),m=$("secMsg"),ok=0,ko=0;if(!L.length)return;
+  if(!confirm("Aggiornare "+L.length+" documenti al formato sicuro? Nessuna prenotazione viene cancellata: cambia solo il modo in cui è salvata."))return;
+  $("secMig").disabled=true;m.className="msg";m.textContent="Aggiornamento in corso…";
+  for(var i=0;i<L.length;i++){var x=L[i],o=migDoc(x[0],x[1],x[2]);if(!o.n){ok++;continue}
+    try{await db.collection(x[0]).doc(x[1]).set(o);ok++}catch(e){ko++;console.warn("Conversione non riuscita",x[0],x[1],e)}}
+  m.className=ko?"msg err":"msg ok";m.textContent=ko?"Aggiornati "+ok+" documenti, "+ko+" non riusciti: riprova.":"Fatto: "+ok+" documenti aggiornati, nessuna prenotazione persa.";renderSec()}
+$("secBak").onclick=function(){secBackup()};$("secMig").onclick=function(){secMigrate()};
 function flash(t){var s=$("status");s.textContent=t;s.hidden=false;setTimeout(function(){if(s.textContent===t&&loaded)s.hidden=true},6000)}
 /* ---- Gare ---- */
 var CARTS=3;
@@ -2311,7 +2357,7 @@ function cKey(x){return (x.by||uid||"")+"_"+(x.at||0)}
 function hasCart(g,x){var k=cKey(x);if(g&&g.cartOn&&g.cartOn[k])return true;if(g&&g.cartOff&&g.cartOff[k])return false;return !!x.cart}
 async function admCart(g,x,give){
   var k=cKey(x),on=Object.assign({},g.cartOn||{}),off=Object.assign({},g.cartOff||{}),wasOff=!!off[k];
-  if(give){if(cartFree(g)<=0)throw new Error("Non ci sono cart disponibili per questa gara.");var n=await claimCart(g,x.by);if(!n)throw new Error("Non ci sono cart disponibili per questa gara.");on[k]=n;delete off[k]}
+  if(give){if(cartFree(g)<=0)throw new Error("Non ci sono cart disponibili per questa gara.");var n=await claimCart(g,x.by,x.flight);if(!n)throw new Error("Non ci sono cart disponibili per questa gara.");on[k]=n;delete off[k]}
   else{if(on[k]){try{await db.collection("cart").doc(g.id+"_"+on[k]).delete()}catch(e){}delete on[k]}
     else if(x.cart&&x.cartSlot&&!wasOff){try{await db.collection("cart").doc(g.id+"_"+x.cartSlot).delete()}catch(e){}}
     off[k]=1}
@@ -2468,42 +2514,45 @@ $("iCancel").onclick=closeIscr;
 document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("#iDlg .pv-n a"))closeIscr()});
 $("iDlg").addEventListener("click",function(e){if(e.target===this)closeIscr()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("iDlg").hidden)closeIscr()});
-async function claimCart(g,forUid){
+function flKeep(cur,p,n){return {gara:cur.gara,cap:+cur.cap||4,n:n,p:p,pref:cur.pref||"",at:cur.at}}
+/* imposta (c>0) o toglie (c=0) il numero del proprio cart nella propria voce del flight */
+async function setMyC(fr,c){await txDoc(fr,function(cur){if(!cur||!cur.at)return undefined;var p=pOf(cur);if(!p[uid])return undefined;if(c)p[uid].c=c;else delete p[uid].c;return flKeep(cur,p,nOf(cur))})}
+async function claimCart(g,forUid,k){
   for(var n=1;n<=CARTS;n++){
-    var ref=db.collection("cart").doc(g.id+"_"+n);
-    var ls=await ref.acquire({holder:(uid||"anon")+"-"+Date.now(),ttlMs:8000});if(!ls.acquired)continue;
-    var sn=await ref.get();if(sn.exists&&sn.data()&&sn.data().at)continue;
-    await ref.set({by:forUid||uid||"",at:Date.now()});return n;
+    var ref=db.collection("cart").doc(g.id+"_"+n),sn=await ref.get();if(sn.exists&&sn.data()&&sn.data().at)continue;
+    if(forUid){try{await ref.set({by:forUid,at:Date.now(),k:+k||0});return n}catch(e){continue}}
+    if(!k)return 0;var fr=db.collection("gflights").doc(g.id+"_"+k);
+    try{await setMyC(fr,n);await ref.set({by:uid,at:Date.now(),k:+k});return n}catch(e){}
   }
+  if(!forUid&&k){try{await setMyC(db.collection("gflights").doc(g.id+"_"+k),0)}catch(e){}}
   return 0;
 }
 async function claimFlight(g,n,k,pref){
-  var cap=capOf(g),hold=(uid||"anon")+"-"+Date.now();
-  if(k){var ref=db.collection("gflights").doc(g.id+"_"+k),ls=await ref.acquire({holder:hold,ttlMs:8000});
-    if(!ls.acquired)throw new Error("Qualcuno si sta iscrivendo a questo flight proprio ora. Riprova tra qualche secondo.");
-    var sn=await ref.get(),cur=(sn.exists&&sn.data()&&sn.data().at)?sn.data():null;if(!cur)throw new Error("Questo flight non esiste più: scegline un altro.");
-    var pa=partsOf(cur).slice(),used=+cur.n||0;cap=+cur.cap||cap;
-    if(used+n>cap)throw new Error(used>=cap?"Questo flight è al completo.":"In questo flight "+(cap-used===1?"resta 1 posto libero.":"restano "+(cap-used)+" posti liberi."));
-    pa.push({by:uid,n:n,at:Date.now()});await ref.set({gara:cur.gara||g.id,cap:cap,n:used+n,p:pMap(pa),pref:cur.pref||"",at:cur.at});return {k:k,free:cap-used-n,pref:cur.pref||""}}
-  var start=flightsOf(g).reduce(function(m,f){return Math.max(m,f.k)},0)+1;
-  for(var t=start;t<start+20;t++){var r2=db.collection("gflights").doc(g.id+"_"+t),l2=await r2.acquire({holder:hold,ttlMs:8000});if(!l2.acquired)continue;
-    var s2=await r2.get();if(s2.exists&&s2.data()&&s2.data().at)continue;
-    await r2.set({gara:g.id,cap:cap,n:n,p:pMap([{by:uid,n:n,at:Date.now()}]),pref:pref||"",at:Date.now()});return {k:t,free:cap-n,pref:pref||""}}
+  var cap=capOf(g),res=null;
+  if(k){await txDoc(db.collection("gflights").doc(g.id+"_"+k),function(cur){cur=cur&&cur.at?cur:null;if(!cur)throw new Error("Questo flight non esiste più: scegline un altro.");
+      var cp=+cur.cap||cap,used=nOf(cur);
+      if(used+n>cp)throw new Error(used>=cp?"Questo flight è al completo.":"In questo flight "+(cp-used===1?"resta 1 posto libero.":"restano "+(cp-used)+" posti liberi."));
+      var p=pOf(cur),m=p[uid];p[uid]=m?Object.assign(m,{n:(+m.n||0)+n}):{n:n,at:Date.now()};
+      res={k:k,free:cp-used-n,pref:cur.pref||""};return flKeep(cur,p,used+n)});
+    return res}
+  var start=flightsOf(g).reduce(function(m,f){return Math.max(m,f.k<10000?f.k:0)},0)+1;
+  for(var t=start;t<start+20;t++){var taken=false;
+    await txDoc(db.collection("gflights").doc(g.id+"_"+t),function(cur){taken=!!(cur&&cur.at);if(taken)return undefined;var p={};p[uid]={n:n,at:Date.now()};return {gara:g.id,cap:cap,n:n,p:p,pref:pref||"",at:Date.now()}});
+    if(!taken)return {k:t,free:cap-n,pref:pref||""}}
   throw new Error("Non è stato possibile creare il flight. Riprova.");
 }
 async function claimSlot(g,n,t){
-  var k=slotK(t),ref=db.collection("gflights").doc(g.id+"_"+k),ls=await ref.acquire({holder:(uid||"anon")+"-"+Date.now(),ttlMs:8000});
-  if(!ls.acquired)throw new Error("Qualcuno si sta iscrivendo a questa partenza proprio ora. Riprova tra qualche secondo.");
-  var sn=await ref.get(),cur=(sn.exists&&sn.data()&&sn.data().at)?sn.data():null,used=cur?(+cur.n||0):0,leg=0;
-  flightsOf(g).forEach(function(f){if(f.k<10000&&f.pref===t)leg+=f.n});
-  if(used+leg+n>4)throw new Error(used+leg>=4?"La partenza delle "+t+" è al completo.":"Alle "+t+" "+(4-used-leg===1?"resta 1 posto libero.":"restano "+(4-used-leg)+" posti liberi."));
-  var pa=cur?partsOf(cur).slice():[];pa.push({by:uid,n:n,at:Date.now()});
-  await ref.set({gara:cur?(cur.gara||g.id):g.id,cap:cur?(+cur.cap||4):4,n:used+n,p:pMap(pa),pref:cur?(cur.pref||t):t,at:cur?cur.at:Date.now()});return {k:k,free:4-used-leg-n,pref:t}}
+  var k=slotK(t),leg=0,res=null;flightsOf(g).forEach(function(f){if(f.k<10000&&f.pref===t)leg+=f.n});
+  await txDoc(db.collection("gflights").doc(g.id+"_"+k),function(cur){cur=cur&&cur.at?cur:null;var used=nOf(cur);
+    if(used+leg+n>4)throw new Error(used+leg>=4?"La partenza delle "+t+" è al completo.":"Alle "+t+" "+(4-used-leg===1?"resta 1 posto libero.":"restano "+(4-used-leg)+" posti liberi."));
+    var p=pOf(cur),m=p[uid];p[uid]=m?Object.assign(m,{n:(+m.n||0)+n}):{n:n,at:Date.now()};res={k:k,free:4-used-leg-n,pref:t};
+    return cur?flKeep(cur,p,used+n):{gara:g.id,cap:4,n:n,p:p,pref:t,at:Date.now()}});
+  return res}
 async function releaseFlight(gid,k,n){
-  if(!k)return;var ref=db.collection("gflights").doc(gid+"_"+k);
-  try{var sn=await ref.get();if(!sn.exists)return;var cur=sn.data(),pa=partsOf(cur).map(function(p){return {by:p.by,n:+p.n||0,at:p.at}}),i=-1;
-    pa.forEach(function(p,j){if(i<0&&p.by===uid&&p.n===n)i=j});if(i<0)pa.forEach(function(p,j){if(i<0&&p.by===uid)i=j});if(i>=0){pa[i].n-=n;if(pa[i].n<=0)pa.splice(i,1)}
-    var tot=pSum(pa);if(tot>0)await ref.set({gara:cur.gara,cap:+cur.cap||4,n:tot,p:pMap(pa),pref:cur.pref||"",at:cur.at});else await ref.delete()}catch(e){}
+  if(!k)return;
+  try{await txDoc(db.collection("gflights").doc(gid+"_"+k),function(cur){if(!cur||!cur.at)return undefined;var p=pOf(cur),m=p[uid];if(!m)return undefined;
+      var dec=Math.min(n||+m.n||0,+m.n||0);m.n=(+m.n||0)-dec;if(m.n<=0)delete p[uid];var tot=nOf(cur)-dec;
+      if(!Object.keys(p).length||tot<=0)return null;return flKeep(cur,p,tot)})}catch(e){}
 }
 async function joinGara(g,pl,em,pref,wantCart,flightK,tel){
   if(!db||!uid)throw new Error("Per iscriverti devi accedere con il tuo account.");
@@ -2514,6 +2563,7 @@ async function joinGara(g,pl,em,pref,wantCart,flightK,tel){
   if(g.coppie&&pl.length===3)throw new Error("Nelle gare a coppie si iscrivono 1 o 2 giocatori, oppure 4 (due coppie).");
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em))throw new Error("Serve un'email valida del giocatore 1.");
   if(!telOk(tel))throw new Error("Serve un numero di telefono valido del giocatore 1.");tel=String(tel).trim();
+  if(!nmOk(pl))throw new Error("Nome e cognome possono avere al massimo 60 caratteri.");
   if(!g.shotgun&&flightK){var lf=flightOf(g,flightK);if(!lf||lf.cap-lf.n<pl.length)throw new Error(lf?(lf.cap-lf.n?"In questo "+(g.coppie?"posto":"flight")+" "+(lf.cap-lf.n===1?"resta 1 posto libero.":"restano "+(lf.cap-lf.n)+" posti liberi."):"Questo flight si è appena completato."):"Questo flight non esiste più: scegline un altro.")}
   else if(!g.shotgun){var ts0=gTimes(g);if(!pref||ts0.indexOf(pref)<0)throw new Error("Scegli l'orario di partenza tra le "+g.from+" e le "+g.to+".");
     if(g.coppie&&pl.length===3)throw new Error("Nelle gare a coppie si iscrivono 1, 2 o 4 giocatori.");
@@ -2526,7 +2576,7 @@ async function joinGara(g,pl,em,pref,wantCart,flightK,tel){
   try{if(!g.shotgun&&!flightK)fls.push(await claimSlot(g,pl.length,pref));else for(var q=0;q<grp.length;q++)fls.push(await claimFlight(g,grp[q].length,q?0:flightK,pref))}
   catch(e){for(var q2=0;q2<fls.length;q2++)await releaseFlight(g.id,fls[q2].k,grp[q2].length);throw e}
   var fl=fls[fls.length-1];
-  try{if(wantCart){slot=await claimCart(g);if(!slot)throw new Error("I cart per questa gara sono finiti: iscriviti senza cart.")}}
+  try{if(wantCart){slot=await claimCart(g,null,fls[0].k);if(!slot)throw new Error("I cart per questa gara sono finiti: iscriviti senza cart.")}}
   catch(e){for(var q3=0;q3<fls.length;q3++)await releaseFlight(g.id,fls[q3].k,grp[q3].length);throw e}
   try{var r=db.doc("iscrizioni/"+uid),sn=await r.get(),li=(sn.exists&&(sn.data().list||[]))||[],t0=Date.now();
     fls.forEach(function(f,q){li.push({gara:g.id,flight:f.k,players:grp[q],email:em,tel:tel,pref:f.pref||"",cart:!!slot&&!q,cartSlot:q?null:(slot||null),at:t0+q})});await r.set({list:li})}
@@ -3440,7 +3490,7 @@ var timer=setTimeout(function(){if(!loaded){var s=$("status");s.textContent="Le 
     if(user){try{uid=await user.id()}catch(e){}canAdmin=!!(await user.isOwner())||!!(await user.canEdit());isOwner=canAdmin;renderAdmin()}
     if(!db)return;
     db.collection("teetimes").onSnapshot(function(snap){
-      booked={};snap.docs.forEach(function(d){var v=d.data();if(v&&v.at){booked[d.id]=v;if(canAdmin&&!v.p)secMig("teetimes",d.id,v)}});
+      booked={};setTimeout(renderSec,0);snap.docs.forEach(function(d){var v=d.data();if(v&&v.at){booked[d.id]=v}});
       loaded=true;clearTimeout(timer);$("status").hidden=true;renderSlots();renderBookings();
     },function(){$("status").textContent="Errore nel caricamento delle prenotazioni.";$("status").hidden=false});
     db.collection("blocked").onSnapshot(function(sn){
@@ -3460,9 +3510,10 @@ var timer=setTimeout(function(){if(!loaded){var s=$("status");s.textContent="Le 
     db.doc("settings/assistant").onSnapshot(function(sn){
       info=(sn.exists&&sn.data()&&sn.data().text)||"";var ta=$("infoText");if(ta&&document.activeElement!==ta)ta.value=info;
     },function(){});
-    db.collection("gare").onSnapshot(function(sn){gare={};sn.docs.forEach(function(d){var v=d.data();if(v&&v.date)gare[d.id]=v});renderDays();renderSlots();renderGare();renderGList();try{if(canAdmin)fillFlGara()}catch(e){}},function(){});
-    db.collection("gflights").onSnapshot(function(sn){gfl={};sn.docs.forEach(function(d){var v=d.data();if(v&&v.at&&v.gara){(gfl[v.gara]=gfl[v.gara]||[]).push({k:+d.id.split("_").pop(),cap:+v.cap||4,n:+v.n||0,parts:partsOf(v),pref:v.pref||""});if(canAdmin&&!v.p)secMig("gflights",d.id,v)}});renderSlots();renderGare();renderGList()},function(){});
-    db.collection("cart").onSnapshot(function(sn){carts={};sn.docs.forEach(function(d){var v=d.data();if(v&&v.at){var gid=d.id.replace(/_\d$/,"");carts[gid]=(carts[gid]||0)+1}});renderSlots();renderGare();renderGList()},function(){});
+    db.collection("gare").onSnapshot(function(sn){gare={};sn.docs.forEach(function(d){var v=d.data();if(v&&v.date)gare[d.id]=v});renderDays();renderSlots();renderGare();renderGList();try{if(canAdmin)fillFlGara()}catch(e){}gdaySync()},function(){});
+    if(canAdmin)db.collection("gday").onSnapshot(function(sn){GDAY={};sn.docs.forEach(function(d){GDAY[d.id]=d.data()||{}});GDAY_OK=true;gdaySync()},function(){});
+    db.collection("gflights").onSnapshot(function(sn){gfl={};GFRAW={};sn.docs.forEach(function(d){var v=d.data();if(v)GFRAW[d.id]=v;if(v&&v.at&&v.gara){(gfl[v.gara]=gfl[v.gara]||[]).push({k:+d.id.split("_").pop(),cap:+v.cap||4,n:+v.n||0,parts:partsOf(v),pref:v.pref||""})}});renderSlots();renderGare();renderGList();renderSec()},function(){});
+    db.collection("cart").onSnapshot(function(sn){carts={};CARTRAW={};sn.docs.forEach(function(d){var v=d.data();if(v)CARTRAW[d.id]=v;if(v&&v.at){var gid=d.id.replace(/_\d$/,"");carts[gid]=(carts[gid]||0)+1}});renderSlots();renderGare();renderGList()},function(){});
     if(uid)db.doc("iscrizioni/"+uid).onSnapshot(function(sn){myIscr=(sn.exists&&sn.data()&&sn.data().list)||[];renderSlots();renderGare()},function(){});
     if(canAdmin)db.collection("iscrizioni").onSnapshot(function(sn){allIscr={};sn.docs.forEach(function(d){((d.data()||{}).list||[]).forEach(function(x){(allIscr[x.gara]=allIscr[x.gara]||[]).push(Object.assign({},x,{by:d.id}))})});renderGList();try{flGaraCh()}catch(e){}},function(){});
     if(canAdmin)db.collection("giocatori").onSnapshot(function(sn){GIOC={};sn.docs.forEach(function(d){var v=d.data();if(v)GIOC[d.id]=v});try{renderStats();if(ED)renderEd()}catch(e){}},function(){});
@@ -3489,6 +3540,11 @@ var timer=setTimeout(function(){if(!loaded){var s=$("status");s.textContent="Le 
   window.__fb.then(function(){var a=window.gmAuth,w=document.getElementById("lgWho");
     if(!a){if(m){m.className="msg err";m.textContent="Collegamento a Firebase non riuscito: ricarica la pagina."}return}
     if(w&&a.email)w.textContent="Accesso come "+a.email+".";
+    if(w&&a.email&&a.isAdmin&&!a.verified){var vb=document.createElement("p");vb.className="msg err";vb.style.margin=".6rem 0 0";
+      vb.textContent="La tua email non è ancora verificata: per sicurezza il database accetta modifiche solo dagli amministratori con email verificata. ";
+      var sb=document.createElement("button");sb.type="button";sb.className="btn alt sm";sb.textContent="Invia email di verifica";
+      sb.onclick=async function(){sb.disabled=true;try{await a.sendVerify();vb.textContent="Ti abbiamo mandato un'email: apri il link che contiene, poi esci e rientra qui.";}catch(x){vb.textContent="Invio non riuscito ("+((x&&x.code)||"errore")+"): riprova tra qualche minuto.";sb.disabled=false}};
+      vb.appendChild(sb);w.parentNode.insertAdjacentElement("afterend",vb)}
     if(a.email&&!a.isAdmin&&m){m.className="msg err";
       m.textContent="Sei entrato come "+a.email+", ma questo account non risulta amministratore. "+
         (a.why==="nodoc"?"In Firestore, nella raccolta «admins», manca il documento con ID «"+a.email.toLowerCase()+"».":
