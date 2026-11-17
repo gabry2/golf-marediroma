@@ -15,7 +15,10 @@ const ROOT = new URL('..', import.meta.url).pathname;
 const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.json': 'application/json' };
 const AUTH = 'http://127.0.0.1:9099';
 const PW = 'Prova-sicura-2026!';
-let env, server, browser, base;
+let env, server, browser, base, CORRENTE = null;
+import { afterEach } from 'node:test';
+import { writeFile } from 'node:fs/promises';
+let nT = 0;
 const T = Date.now();
 const D_GARA = giorno(5);
 
@@ -41,8 +44,11 @@ async function nuovoUtente(email, verificato) {
 async function pagina(hash) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, acceptDownloads: true, timezoneId: 'Europe/Rome', locale: 'it-IT' });
   const pg = await ctx.newPage();
-  const errori = [];
+  const errori = [], log = [];
   pg.on('pageerror', (e) => errori.push(String(e)));
+  pg.on('console', (m) => log.push(`${m.type()}: ${m.text()}`));
+  pg.on('requestfailed', (r) => log.push(`richiesta fallita: ${r.url().slice(0, 120)} ${r.failure()?.errorText}`));
+  CORRENTE = { pg, log };
   pg.on('dialog', (d) => d.accept());
   await pg.route(/api\.met\.no|formsubmit\.co/, (r) => r.fulfill({ status: 200, body: '{}', contentType: 'application/json' }));
   await pg.goto(`${base}/index.html?emu=1${hash}`);
@@ -66,6 +72,14 @@ before(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
   browser = await chromium.launch();
   await mkdir(new URL('./risultati/', import.meta.url), { recursive: true });
+});
+afterEach(async () => {
+  nT++;
+  if (!CORRENTE) return;
+  const out = new URL(`./risultati/sito-${nT}`, import.meta.url).pathname;
+  try { await CORRENTE.pg.screenshot({ path: out + '.png', fullPage: false }); } catch {}
+  await writeFile(out + '.log', CORRENTE.log.join('\n'));
+  CORRENTE = null;
 });
 after(async () => { await browser?.close(); server?.close(); await env?.cleanup(); });
 
