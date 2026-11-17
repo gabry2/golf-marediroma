@@ -293,6 +293,18 @@ a.card{text-decoration:none;color:inherit;display:block}
 .ct-h{display:flex;gap:.65rem;align-items:flex-start;margin:1.3rem 0}
 .ct-h svg{flex:0 0 20px;width:20px;height:20px;margin-top:.15rem;fill:none;stroke:var(--green);stroke-width:1.8;stroke-linecap:round}
 .ct-h strong{display:block;font-family:"Bricolage Grotesque",sans-serif}.ct-h span{color:var(--muted)}
+.ext{display:grid;place-items:center;text-align:center;padding:1.4rem;background:linear-gradient(160deg,#F2F7F3,#E7F0EA)}
+.cs-rv .ext{height:min(640px,140vw)}.ct-map .ext{height:18rem}
+.ext.on{display:block;padding:0;background:none}
+.ext-b{max-width:24rem;display:flex;flex-direction:column;align-items:center;gap:.55rem}
+.ext-b p{margin:0;font-size:.95rem;color:var(--muted);line-height:1.5}.ext-b .ext-t{font:600 1.15rem/1.3 "Playfair Display",Georgia,serif;color:var(--ink)}
+.ext-b .btn{margin-top:.3rem}
+.ext-r{display:flex;align-items:center;gap:.45rem;font-size:.85rem;color:var(--muted);cursor:pointer}.ext-r input{width:1.05rem;height:1.05rem;accent-color:var(--green)}
+.ext-p{font:600 .82rem "Bricolage Grotesque",sans-serif;color:var(--green-d)}
+.pv-n{font-size:.88rem;color:var(--muted);margin:.7rem 0 0;max-width:40rem}.pv-n a{color:var(--green-d);font-weight:600}
+#p-privacy .pv{max-width:48rem}#p-privacy .pv h3{font-size:1.35rem;margin:2.2rem 0 .5rem}#p-privacy .pv p,#p-privacy .pv li{max-width:none;font-size:1.05rem}
+#p-privacy .pv ul{padding-left:1.2rem;margin:.4rem 0 0}#p-privacy .pv li{margin:.35rem 0}#p-privacy .pv-upd{color:var(--muted);font-size:.95rem}
+#p-privacy .pv-box{background:var(--soft);border-left:3px solid var(--sand);border-radius:0 12px 12px 0;padding:1rem 1.2rem;margin-top:1.2rem}
 .ct-map{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(135deg,#DCEBDD,#C9E2E7)}
 .ct-map iframe{display:block;width:100%;height:18rem;border:0}
 .ct-mapl{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.8rem 1rem;background:#fff;text-decoration:none!important;color:var(--ink);font-family:"Bricolage Grotesque",sans-serif;border-top:1px solid var(--line)}
@@ -842,6 +854,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 .li-grid li{margin:.15rem 0}
 .li-grid a{color:#fff;text-decoration:underline;text-decoration-color:rgba(255,255,255,.35);text-underline-offset:3px}
 .li-grid a:hover{text-decoration-color:#C9A24A}
+.li-copy a{color:#E9C873}
 .li-copy{grid-column:1/-1;max-width:none;border-top:1px solid rgba(255,255,255,.15);padding-top:1rem;font-size:.9rem;color:#B9D4C0}
 @media (max-width:760px){.li-grid{grid-template-columns:1fr}}
 @media (max-width:760px){.two{grid-template-columns:1fr}.btn.alt{margin:.6rem 0 0}.book .row{grid-template-columns:1fr}}
@@ -1035,7 +1048,7 @@ try{
 <input type="radio" name="recS" id="recS1" value="1"><label for="recS1" title="1 stella">★</label></div></fieldset>
 <label>La tua recensione<textarea id="recT" rows="4" maxlength="600" required placeholder="Il percorso, l'accoglienza, le gare…"></textarea></label>
 <label class="chk"><input type="checkbox" id="recOk"> Acconsento alla pubblicazione sul sito del mio nome e della recensione</label>
-<p style="margin-top:1rem"><button class="btn" type="submit" id="recSend">Invia la recensione</button></p>
+<p style="margin-top:1rem"><button class="btn" type="submit" id="recSend">Invia la recensione</button></p><p class="pv-n">I dati inseriti servono solo a gestire la tua richiesta. <a href="#privacy">Informativa privacy</a></p>
 <p class="msg" id="recMsg" role="status"></p>
 </form></div>
 </section>
@@ -1171,7 +1184,7 @@ try{
 <label>Note <small>(facoltative)</small><textarea id="evNote" rows="4" maxlength="1500" placeholder="Es. vorremmo una cena dopo la premiazione, abbiamo già i nostri gadget, …"></textarea></label>
 <input type="text" id="evHp" name="_honey" tabindex="-1" autocomplete="off" class="ct-hp" aria-hidden="true">
 <label class="chk"><input type="checkbox" id="evOk"> Acconsento all'uso dei dati per essere ricontattato</label>
-<p style="margin-top:1rem"><button class="btn" type="submit" id="evSend">Invia la richiesta</button></p>
+<p style="margin-top:1rem"><button class="btn" type="submit" id="evSend">Invia la richiesta</button></p><p class="pv-n">I dati inseriti servono solo a gestire la tua richiesta. <a href="#privacy">Informativa privacy</a></p>
 <p class="msg" id="evMsg" role="status"></p>
 </form>
 </div></section>
@@ -1197,7 +1210,7 @@ try{
 <div class="em2"><label>Email <span class="req">*</span><input id="em" type="email" required autocomplete="email" inputmode="email" placeholder="nome@esempio.it"></label><label>Telefono <span class="req">*</span><input id="tel" type="tel" required autocomplete="tel" inputmode="tel" maxlength="30" placeholder="333 123 4567"></label></div>
 <p style="font-size:.9rem;color:var(--muted);margin:.4rem 0 0">Del giocatore 1: qui arriva la conferma. Email e telefono li vede solo il circolo.</p>
 <p class="msg" id="msg" role="status"></p>
-<p style="margin-top:1rem"><button class="btn" id="go" type="button">Conferma prenotazione</button><button class="btn alt" id="cancel" type="button">Annulla</button></p>
+<p style="margin-top:1rem"><button class="btn" id="go" type="button">Conferma prenotazione</button><button class="btn alt" id="cancel" type="button">Annulla</button></p><p class="pv-n">I dati inseriti servono solo a gestire la tua richiesta. <a href="#privacy">Informativa privacy</a></p>
 </div>
 </div></section>
 
@@ -1415,9 +1428,45 @@ try{
 <section class="cs-reel" aria-labelledby="hReel">
 <div class="cs-rt"><span class="h-kick cs-kick">Su Instagram</span><h2 id="hReel">Guarda il Golf Marediroma in movimento</h2><p>Il nostro circolo come lo vivono i giocatori, raccontato nel reel del Golf Marediroma.</p>
 <a class="btn" href="https://www.instagram.com/reel/De_c2nJIrle/" target="_blank" rel="noopener">Guarda il reel su Instagram</a></div>
-<div class="cs-rv"><iframe src="https://www.instagram.com/reel/De_c2nJIrle/embed/" title="Reel Instagram del Golf Marediroma" loading="lazy" allowtransparency="true" allow="encrypted-media; picture-in-picture" scrolling="no"></iframe>
+<div class="cs-rv"><div class="ext" data-svc="instagram" data-src="https://www.instagram.com/reel/De_c2nJIrle/embed/" data-title="Reel Instagram del Golf Marediroma"><div class="ext-b"><p class="ext-t">Il reel è ospitato su Instagram</p><p>Per rispettare la tua privacy non lo carichiamo in automatico: aprendolo, Instagram (Meta) riceve il tuo indirizzo IP e può usare cookie propri.</p><button type="button" class="btn ext-go">Mostra il reel</button><label class="ext-r"><input type="checkbox"> Ricorda la scelta su questo dispositivo</label><a class="ext-p" href="#privacy">Informativa privacy e cookie</a></div></div>
 <a class="cs-rl" href="https://www.instagram.com/reel/De_c2nJIrle/" target="_blank" rel="noopener">Apri su Instagram →</a></div>
 </section>
+</div></section>
+<section class="page" id="p-privacy"><div class="wrap pv">
+<span class="h-kick">Trasparenza</span>
+<h2>Informativa privacy e cookie</h2>
+<p class="pv-upd">Ultimo aggiornamento: 17 novembre 2026</p>
+<p>Questa pagina spiega quali dati raccoglie il sito del Golf Marediroma, perché li usiamo, con chi li condividiamo e quali diritti hai, ai sensi del Regolamento (UE) 2016/679 (GDPR) e del Codice privacy (D.Lgs. 196/2003).</p>
+<h3>Chi tratta i tuoi dati</h3>
+<p>Il titolare del trattamento è <strong>Golf Mare di Roma S.S.D. a r.l.</strong>, Via Enna 30, 00040 Ardea (RM). Per qualsiasi domanda sui tuoi dati puoi scrivere a <a href="mailto:segreteriasportiva@golfmarediroma.com">segreteriasportiva@golfmarediroma.com</a> o chiamare il <a href="tel:+39069133250">+39 06 913 3250</a>.</p>
+<h3>Quali dati raccogliamo e perché</h3>
+<ul>
+<li><strong>Prenotazione dei tee time:</strong> nome e cognome dei giocatori, email e telefono del giocatore 1, giorno e orario. Servono a registrare la prenotazione, a mandarti la conferma e a contattarti in caso di variazioni.</li>
+<li><strong>Iscrizione alle gare:</strong> nome e cognome dei giocatori, email e telefono del giocatore 1, orario o flight preferito e richiesta del cart. Servono a organizzare la gara, comporre i flight e comunicarti partenze e variazioni.</li>
+<li><strong>Moduli di contatto e «Crea il tuo evento»:</strong> nome, email, telefono, azienda (se indicata) e il testo del messaggio. Servono solo a risponderti.</li>
+<li><strong>Recensioni:</strong> nome, voto e testo che scegli di inviarci. Le pubblichiamo solo dopo averle lette, con il nome che hai indicato.</li>
+<li><strong>Chat con Remo:</strong> le domande restano sul tuo dispositivo e non vengono salvate da noi.</li>
+</ul>
+<p>La base giuridica è l'esecuzione del servizio che ci chiedi (art. 6.1.b GDPR) e, per la sicurezza del sito e delle prenotazioni, il nostro legittimo interesse (art. 6.1.f). Non usiamo i tuoi dati per pubblicità e non li vendiamo a nessuno.</p>
+<h3>Per quanto tempo li conserviamo</h3>
+<p>Le prenotazioni e le iscrizioni restano attive fino allo svolgimento del tee time o della gara e vengono cancellate entro 12 mesi. I messaggi dei moduli di contatto sono conservati per il tempo necessario a risponderti e comunque non oltre 24 mesi. Restano più a lungo solo i dati che la legge ci obbliga a tenere, ad esempio per finalità fiscali o sportive.</p>
+<h3>Con chi li condividiamo</h3>
+<p>I dati sono visibili solo alla segreteria e agli amministratori del circolo. Per far funzionare il sito ci appoggiamo a fornitori che li trattano per nostro conto:</p>
+<ul>
+<li><strong>Google Firebase</strong> (Google Ireland Ltd. e Google LLC): database delle prenotazioni e accesso al sito.</li>
+<li><strong>FormSubmit</strong>: invio delle email di conferma e dei messaggi dei moduli.</li>
+<li><strong>GitHub Pages</strong> (GitHub Inc.): pubblicazione del sito; come ogni server web registra l'indirizzo IP nei log tecnici.</li>
+<li><strong>Google Fonts</strong>: caratteri tipografici del sito, che comportano l'invio dell'indirizzo IP a Google.</li>
+<li><strong>MET Norway</strong> (api.met.no): previsioni meteo mostrate nella home.</li>
+</ul>
+<p>Alcuni di questi fornitori hanno sede negli Stati Uniti: in quei casi il trasferimento avviene con le garanzie previste dal GDPR, come il Data Privacy Framework UE-USA o le clausole contrattuali standard della Commissione europea.</p>
+<h3>Cookie e contenuti esterni</h3>
+<p>Il sito <strong>non usa cookie di profilazione né strumenti di statistica o pubblicità</strong>. Salva sul tuo dispositivo solo informazioni tecniche indispensabili per farlo funzionare, come la sessione di accesso anonima che permette di riconoscere le tue prenotazioni e di annullarle, e le tue scelte sui contenuti esterni. Per questi strumenti tecnici non serve il consenso.</p>
+<p>La <strong>mappa di Google Maps</strong> e il <strong>reel di Instagram</strong> vengono caricati solo se premi «Mostra la mappa» o «Mostra il reel». Solo in quel momento Google o Instagram (Meta) ricevono il tuo indirizzo IP e possono usare cookie propri, secondo le loro informative: <a href="https://policies.google.com/privacy?hl=it" target="_blank" rel="noopener">privacy di Google</a> e <a href="https://privacycenter.instagram.com/policy" target="_blank" rel="noopener">privacy di Instagram</a>.</p>
+<div class="pv-box"><p>Se avevi scelto di ricordare il consenso per la mappa o per Instagram, puoi revocarlo qui.</p><p style="margin-top:.6rem"><button type="button" class="btn alt" id="pvRevoke">Revoca il consenso ai contenuti esterni</button></p></div>
+<h3>I tuoi diritti</h3>
+<p>Puoi chiederci in qualsiasi momento di vedere i tuoi dati, correggerli, cancellarli, limitarne l'uso, riceverne una copia o opporti al trattamento (artt. 15–22 GDPR), scrivendo a <a href="mailto:segreteriasportiva@golfmarediroma.com">segreteriasportiva@golfmarediroma.com</a>. Le tue prenotazioni e iscrizioni puoi anche annullarle direttamente dal sito. Se ritieni che i tuoi dati siano trattati in modo non corretto, puoi presentare reclamo al <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">Garante per la protezione dei dati personali</a>.</p>
+<p>Il conferimento dei dati è facoltativo, ma senza nome, email e telefono non possiamo registrare prenotazioni e iscrizioni.</p>
 </div></section>
 <section class="page" id="p-contatti"><div class="wrap">
 <h2>Contatti</h2>
@@ -1426,7 +1475,7 @@ try{
 <div class="ct-i">
 <p><strong>Golf Marediroma</strong></p><ul class="cl dark"><li><a href="https://www.google.it/maps/place/Via%20Enna,%2030+00040+Ardea+RM" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><span>Via Enna, 30 – 00040 Ardea (RM)</span></a></li><li><a href="tel:+39069133250"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg><span>+39 06 913 3250</span></a></li><li><a href="https://wa.me/393285552462" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 20.4l1.3-4.1A8.6 8.6 0 1 1 8 19.3z"/><path d="M9.2 8.3c-.4 2.9 3 6.4 6.3 6.6l.9-1.5-1.9-1-.9.8a5.3 5.3 0 0 1-2.6-2.6l.8-.9-1-1.9z"/></svg><span>WhatsApp +39 328 555 2462</span></a></li><li><a href="mailto:segreteriasportiva@golfmarediroma.com"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg><span>segreteriasportiva@golfmarediroma.com</span></a></li></ul>
 <div class="ct-h"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><strong>Orari segreteria</strong><span>Tutti i giorni, dal lunedì alla domenica, dalle 8:00 alle 20:00</span></div></div>
-<div class="ct-map"><iframe title="Mappa: Golf Marediroma, Via Enna 30, Ardea" src="https://maps.google.com/maps?q=Golf%20Marediroma%2C%20Via%20Enna%2030%2C%2000040%20Ardea%20RM&z=15&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+<div class="ct-map"><div class="ext" data-svc="maps" data-src="https://maps.google.com/maps?q=Golf%20Marediroma%2C%20Via%20Enna%2030%2C%2000040%20Ardea%20RM&amp;z=15&amp;output=embed" data-title="Mappa: Golf Marediroma, Via Enna 30, Ardea"><div class="ext-b"><p class="ext-t">La mappa è fornita da Google Maps</p><p>Per rispettare la tua privacy non lo carichiamo in automatico: aprendolo, Google riceve il tuo indirizzo IP e può usare cookie propri.</p><button type="button" class="btn ext-go">Mostra la mappa</button><label class="ext-r"><input type="checkbox"> Ricorda la scelta su questo dispositivo</label><a class="ext-p" href="#privacy">Informativa privacy e cookie</a></div></div>
 <a class="ct-mapl" href="https://www.google.com/maps/search/?api=1&query=Golf%20Marediroma%2C%20Via%20Enna%2030%2C%2000040%20Ardea%20RM" target="_blank" rel="noopener"><span>Via Enna, 30 – Ardea</span><b>Apri in Google Maps →</b></a></div>
 </div>
 <form class="ct-f" id="ctForm" novalidate>
@@ -1438,7 +1487,7 @@ try{
 <label>Messaggio<textarea id="ctM" rows="5" maxlength="2000" required></textarea></label>
 <input type="text" id="ctHp" name="_honey" tabindex="-1" autocomplete="off" class="ct-hp" aria-hidden="true">
 <label class="chk"><input type="checkbox" id="ctOk"> Acconsento all'uso dei miei dati per ricevere una risposta</label>
-<p style="margin-top:1rem"><button class="btn" type="submit" id="ctSend">Invia il messaggio</button></p>
+<p style="margin-top:1rem"><button class="btn" type="submit" id="ctSend">Invia il messaggio</button></p><p class="pv-n">I dati inseriti servono solo a gestire la tua richiesta. <a href="#privacy">Informativa privacy</a></p>
 <p class="msg" id="ctMsg" role="status"></p>
 </form>
 </div>
@@ -1514,7 +1563,7 @@ try{
 <div><h3>Gioca</h3><ul><li><a href="#tee-time">Prenota tee time</a></li><li><a href="#gare">Gare</a></li><li><a href="#percorso">Il percorso</a></li><li><a href="#imparare">Lezioni e Prova</a></li></ul></div>
 <div><h3>Circolo</h3><ul><li><a href="#gallery">Foto Gallery</a></li><li><a href="#chisiamo">Chi Siamo</a></li><li><a href="#abbonati">Abbonamenti</a></li><li><a href="#contatti">Contatti</a></li><li><a href="#amministrazione">Area riservata</a></li></ul></div>
 <ul class="cl row"><li><a href="https://www.google.it/maps/place/Via%20Enna,%2030+00040+Ardea+RM" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><span>Via Enna, 30 – 00040 Ardea (RM)</span></a></li><li><a href="tel:+39069133250"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg><span>+39 06 913 3250</span></a></li><li><a href="https://wa.me/393285552462" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 20.4l1.3-4.1A8.6 8.6 0 1 1 8 19.3z"/><path d="M9.2 8.3c-.4 2.9 3 6.4 6.3 6.6l.9-1.5-1.9-1-.9.8a5.3 5.3 0 0 1-2.6-2.6l.8-.9-1-1.9z"/></svg><span>WhatsApp +39 328 555 2462</span></a></li><li><a href="mailto:segreteriasportiva@golfmarediroma.com"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg><span>segreteriasportiva@golfmarediroma.com</span></a></li></ul>
-<p class="li-copy">© 2026 Golf Marediroma. Tutti i diritti riservati.</p>
+<p class="li-copy">© 2026 Golf Marediroma. Tutti i diritti riservati. · <a href="#privacy">Privacy e cookie</a></p>
 </div></div>
 </footer>
 
@@ -1532,7 +1581,7 @@ try{
 <label class="chk tgl" id="iCartWrap"><input type="checkbox" id="iCart"> <span id="iCartTxt">Prenota un cart</span></label>
 <p class="disc" id="iDisc"></p>
 </div>
-<div class="id-f"><p class="msg" id="iMsg" role="status"></p><div class="id-fb"><button class="btn gold" id="iGo" type="button">Conferma iscrizione</button><button class="btn alt" id="iCancel" type="button">Annulla</button></div></div>
+<div class="id-f"><p class="msg" id="iMsg" role="status"></p><div class="id-fb"><button class="btn gold" id="iGo" type="button">Conferma iscrizione</button><button class="btn alt" id="iCancel" type="button">Annulla</button></div><p class="pv-n">I dati inseriti servono solo a gestire la tua richiesta. <a href="#privacy">Informativa privacy</a></p></div>
 </div></div>
 <p class="toast" id="toast" role="status" hidden></p>
 <button class="chat-fab" id="chatFab" type="button" aria-expanded="false" aria-controls="chatPanel" aria-label="Chiedi al circolo" title="Chiedi al circolo">
@@ -1548,11 +1597,11 @@ try{
 
 <script>
 (function(){
-var pages=["home","circolo","gare","imparare","abbonati","tee-time","gallery","chisiamo","amministrazione","flight","impostazioni","gestione-gallery","contatti","crea-evento"];
+var pages=["home","circolo","gare","imparare","abbonati","tee-time","gallery","chisiamo","amministrazione","flight","impostazioni","gestione-gallery","contatti","crea-evento","privacy"];
 function route(){
   var raw=(location.hash||"#home").slice(1),h=raw,anc=null,AL={mappa:"c-mappa",percorso:"c-percorso",stroke:"c-stroke",pratica:"c-pratica",listino:"abbonati:abb-listino","foto-percorso":"gallery:pcSec","adm-gara":"amministrazione:adm-gara","adm-gare":"amministrazione:adm-gare","adm-blocchi":"amministrazione:adm-blocchi","adm-orari":"amministrazione:adm-orari","adm-chiusure":"amministrazione:adm-chiusure","adm-pren":"amministrazione:adm-pren","adm-admin":"amministrazione:adm-admin"};if(AL[h]){var aq=AL[h].split(":");if(aq.length>1){h=aq[0];anc=aq[1]}else{anc=AL[h];h="circolo"}} if(pages.indexOf(h)<0)h="home";
   pages.forEach(function(p){document.getElementById("p-"+p).classList.toggle("on",p===h)});
-  var TT={circolo:"Il Circolo e il percorso a 9 buche",gare:"Gare ed eventi",imparare:"Lezioni e Prova",abbonati:"Abbonamenti e listino","tee-time":"Prenota il tee time",gallery:"Foto",chisiamo:"Chi Siamo",contatti:"Contatti","crea-evento":"Crea il tuo evento",amministrazione:"Amministrazione",flight:"Flight",impostazioni:"Impostazioni","gestione-gallery":"Gestione foto"};
+  var TT={circolo:"Il Circolo e il percorso a 9 buche",gare:"Gare ed eventi",imparare:"Lezioni e Prova",abbonati:"Abbonamenti e listino","tee-time":"Prenota il tee time",gallery:"Foto",chisiamo:"Chi Siamo",contatti:"Contatti","crea-evento":"Crea il tuo evento",privacy:"Privacy e cookie",amministrazione:"Amministrazione",flight:"Flight",impostazioni:"Impostazioni","gestione-gallery":"Gestione foto"};
   document.title=TT[h]?TT[h]+" | Golf Marediroma":"Golf Marediroma | Golf Club a 9 buche ad Ardea, vicino Roma";
   var ld=document.getElementById("land");if(ld)ld.setAttribute("data-p",h);
   document.querySelectorAll("nav ul a").forEach(function(a){a.classList.toggle("on",(a.getAttribute("href")==="#"+raw||(!anc&&a.getAttribute("href")==="#"+(h==="crea-evento"?"gare":h)))&&!a.classList.contains("cta"))});
@@ -2416,6 +2465,7 @@ function onFlight(){
 function closeIscr(){$("iDlg").hidden=true;curG=null;document.body.style.overflow=""}
 $("iX").onclick=function(){closeIscr()};
 $("iCancel").onclick=closeIscr;
+document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("#iDlg .pv-n a"))closeIscr()});
 $("iDlg").addEventListener("click",function(e){if(e.target===this)closeIscr()});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("iDlg").hidden)closeIscr()});
 async function claimCart(g,forUid){
@@ -2719,6 +2769,14 @@ function renderHG(){var w=$("hgList");if(!w)return;w.innerHTML="";var l=upG().sl
 (function(){var els=document.querySelectorAll(".rv");if(!("IntersectionObserver" in window)){els.forEach(function(e){e.classList.add("in")});return}
   var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target)}})},{rootMargin:"0px 0px -8% 0px",threshold:.12});
   els.forEach(function(e){io.observe(e)})})();
+/* ---- Contenuti esterni (Google Maps, Instagram) caricati solo su richiesta ---- */
+(function(){function ok(v){try{return localStorage.getItem("gm-ext-"+v)==="1"}catch(e){return false}}
+  function load(x){if(x.classList.contains("on"))return;var f=document.createElement("iframe");f.src=x.getAttribute("data-src");f.title=x.getAttribute("data-title");f.loading="lazy";
+    if(x.getAttribute("data-svc")==="instagram"){f.setAttribute("scrolling","no");f.setAttribute("allowtransparency","true");f.setAttribute("allow","encrypted-media; picture-in-picture")}else f.setAttribute("referrerpolicy","no-referrer-when-downgrade");
+    x.innerHTML="";x.appendChild(f);x.classList.add("on")}
+  [].forEach.call(document.querySelectorAll(".ext"),function(x){var v=x.getAttribute("data-svc");if(ok(v))load(x);
+    x.querySelector(".ext-go").onclick=function(){var r=x.querySelector(".ext-r input");if(r&&r.checked){try{localStorage.setItem("gm-ext-"+v,"1")}catch(e){}}load(x)}});
+  var rv=document.getElementById("pvRevoke");if(rv)rv.onclick=function(){try{localStorage.removeItem("gm-ext-maps");localStorage.removeItem("gm-ext-instagram")}catch(e){}rv.textContent="Fatto: la mappa e il reel ti verranno chiesti di nuovo";rv.disabled=true}})();
 /* ---- Chi Siamo: la linea del tempo si disegna scendendo ---- */
 (function(){var tl=document.querySelector(".cs-band .cs-tl");if(!tl)return;var ys=[].slice.call(tl.querySelectorAll(".cs-y")),raf=0;
   var red=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
