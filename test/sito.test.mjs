@@ -79,6 +79,8 @@ afterEach(async () => {
   const out = new URL(`./risultati/sito-${nT}`, import.meta.url).pathname;
   try { await CORRENTE.pg.screenshot({ path: out + '.png', fullPage: false }); } catch {}
   await writeFile(out + '.log', CORRENTE.log.join('\n'));
+  for (const l of CORRENTE.log.slice(-60)) console.log(`DIAG${nT} ${l.slice(0, 300)}`);
+  try { console.log(`DIAG${nT} PAGINA ` + (await CORRENTE.pg.locator('main, body').first().innerText()).replace(/\s+/g, ' ').slice(0, 600)); } catch {}
   CORRENTE = null;
 });
 after(async () => { await browser?.close(); server?.close(); await env?.cleanup(); });
