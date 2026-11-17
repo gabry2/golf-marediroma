@@ -875,11 +875,11 @@ import {initializeAppCheck,ReCaptchaV3Provider} from "https://www.gstatic.com/fi
 import {getFirestore,collection,doc,onSnapshot,getDoc,setDoc,deleteDoc,runTransaction,connectFirestoreEmulator} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig={apiKey:"AIzaSyA98wERvS78saXUXZ0wM_SQkqo7zBDRrwY",authDomain:"sitogolfmarediroma.firebaseapp.com",projectId:"sitogolfmarediroma",storageBucket:"sitogolfmarediroma.firebasestorage.app",messagingSenderId:"126050349740",appId:"1:126050349740:web:ebf6d03ec2660fb1096509"};
 try{
-  const app=initializeApp(firebaseConfig);
+  /* Test automatici: sul proprio computer con ?emu=1 il sito usa l'emulatore Firebase (progetto finto "demo-golf") invece del database vero */
+  const EMU=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&/[?&]emu=1/.test(location.search);
+  const app=initializeApp(EMU?Object.assign({},firebaseConfig,{projectId:"demo-golf"}):firebaseConfig);
   /* Firebase App Check: incolla qui la chiave del sito reCAPTCHA v3 registrata in Firebase Console > App Check */
   const APPCHECK_KEY="";
-  /* Test automatici: sul proprio computer con ?emu=1 il sito usa l'emulatore Firebase invece del database vero */
-  const EMU=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&/[?&]emu=1/.test(location.search);
   if(APPCHECK_KEY&&!EMU){try{initializeAppCheck(app,{provider:new ReCaptchaV3Provider(APPCHECK_KEY),isTokenAutoRefreshEnabled:true})}catch(e){console.warn("App Check non attivo",e)}}
   const auth=getAuth(app),fs=getFirestore(app);
   if(EMU){connectAuthEmulator(auth,"http://127.0.0.1:9099",{disableWarnings:true});connectFirestoreEmulator(fs,"127.0.0.1",8080)}
