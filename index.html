@@ -1158,9 +1158,9 @@ try{
 </div>
 <div class="gs-cal" id="gsCal" hidden>
 <div class="gs-mh"><button type="button" id="gsPrev" aria-label="Mese precedente">‹</button><strong id="gsMon" aria-live="polite"></strong><button type="button" id="gsNext" aria-label="Mese successivo">›</button></div>
-<div class="gs-wd" aria-hidden="true"><span>lun</span><span>mar</span><span>mer</span><span>gio</span><span>ven</span><span>sab</span><span class="fe">dom</span></div>
+<div class="gs-wd" aria-hidden="true"><span>lun</span><span>mar</span><span>mer</span><span>gio</span><span>ven</span><span class="fe">sab</span><span class="fe">dom</span></div>
 <div class="gs-grid" id="gsGrid"></div>
-<div class="gs-lg"><span><i></i>Gare</span><span><i class="b"></i>Comunicati</span><span><b class="gs-fe">7</b>Domeniche e festivi</span></div>
+<div class="gs-lg"><span><i></i>Gare</span><span><i class="b"></i>Comunicati</span><span><b class="gs-fe">7</b>Sabati, domeniche e festivi</span></div>
 </div>
 <p class="gs-act" id="gsAct" hidden><span id="gsActT"></span><button class="btn alt sm" id="gsClr" type="button">Mostra tutte le gare</button></p>
 <div class="gs-ev" id="gsEv" hidden></div>
@@ -2448,7 +2448,7 @@ function gsCal(){
   g.innerHTML="";for(var k=0;k<lead;k++)g.appendChild(document.createElement("span"));
   for(var dn=1;dn<=n;dn++){(function(dn){
     var d=iso(new Date(y,mo,dn)),ev=gsEvents(d),b=document.createElement("button");b.type="button";b.textContent=dn;
-    var fe=festa(d),dom=new Date(y,mo,dn).getDay()===0;if(fe||dom)b.classList.add("fe");
+    var fe=festa(d),wd=new Date(y,mo,dn).getDay(),dom=wd===0||wd===6;if(fe||dom)b.classList.add("fe");
     if(d<today)b.classList.add("past");if(d===today)b.classList.add("today");if(ev.o.length)b.classList.add("o");if(ev.b.length)b.classList.add("b");if(GS.day===d)b.classList.add("sel");
     if(ev.o.length||ev.b.length){var dots=document.createElement("i");ev.o.slice(0,2).forEach(function(){dots.appendChild(document.createElement("b"))});ev.b.slice(0,2).forEach(function(){var x=document.createElement("b");x.className="bl";dots.appendChild(x)});b.appendChild(dots)}
     var lab=dLong(d)+(fe?" ("+fe+")":"")+(ev.o.length?": gara "+ev.o.join(", "):"")+(ev.b.length?(ev.o.length?"; ":": ")+ev.b.map(function(x){return x.t}).join(", "):"");b.setAttribute("aria-label",lab);b.title=lab;
