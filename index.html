@@ -537,7 +537,16 @@ textarea{display:block;width:100%;margin-top:.3rem;padding:.65rem .7rem;font:1.0
 .cs-rv iframe{display:block;width:100%;height:min(640px,140vw);border:0;background:linear-gradient(160deg,#F7F1FA,#FDF0E8)}
 .cs-rl{display:block;padding:.7rem 1rem;text-align:center;font:700 .95rem "Bricolage Grotesque",sans-serif;color:var(--green-d);border-top:1px solid var(--line)}
 @media (max-width:760px){.cs-story,.cs-reel{grid-template-columns:1fr}.cs-g{grid-template-columns:1fr 1fr;gap:.8rem}.cs-ph span{width:3.6rem;height:3.6rem;font-size:1.3rem}}
-.lz-top{display:flex;justify-content:flex-end;margin-top:1.6rem}
+.lz-top{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;margin-top:2.4rem}
+.lz-top .h-kick{margin-bottom:.35rem;color:#9A7A2C}
+.lz-h{font-size:clamp(1.45rem,2.6vw,1.9rem);margin:0;line-height:1.15}
+.lz-top2{margin-top:clamp(2.6rem,6vw,3.6rem)}
+.ini-nav.off{visibility:hidden}
+.lz-c2{border-top:3px solid #C9A24A}
+a.lz-c2{text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s}
+a.lz-c2:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(16,40,24,.12)}
+.lz-go{margin-top:auto;padding-top:.6rem;font:600 .9rem "Bricolage Grotesque",sans-serif;color:var(--green-d)}
+p.lz-cta{text-align:center;max-width:none;margin:2.4rem auto 0}
 .lz{display:flex;gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.6rem 0 1rem;margin-top:.4rem;scrollbar-width:thin}
 .lz>.card{flex:0 0 min(17.5rem,80%);scroll-snap-align:start;margin:0}
 .gas-card{flex-basis:min(21rem,84%)!important;position:relative;overflow:hidden;border-top-color:#C9A24A;padding:0;background:#2C5A2A url(img/golf-a-scuola.jpg) center 75%/cover no-repeat;min-height:17rem;display:flex;align-items:flex-start}
@@ -1099,7 +1108,7 @@ try{
 <div class="gp-badge" aria-hidden="true"><span>solo</span><strong>20€</strong><span>tessera FIG<br>+ 1 lezione</span></div>
 </section>
 <div class="gp-next"><span class="gp-arr" aria-hidden="true">↓</span><p><strong>Ora che hai provato il golf, conoscilo meglio!</strong> Grazie alle nostre 9 buche e agli abbonamenti pensati per chi è iscritto a GolfPop nel Lazio.</p></div>
-<div class="lz-top"><div class="ini-nav"><button type="button" class="ini-a" id="lzPrev" aria-label="Riquadro precedente">‹</button><button type="button" class="ini-a" id="lzNext" aria-label="Riquadro successivo">›</button></div></div>
+<div class="lz-top"><div><span class="h-kick">Per chi inizia</span><h3 class="lz-h">I Primi Passi</h3></div><div class="ini-nav"><button type="button" class="ini-a" id="lzPrev" aria-label="Riquadro precedente">‹</button><button type="button" class="ini-a" id="lzNext" aria-label="Riquadro successivo">›</button></div></div>
 <div class="lz" id="lz">
 <a class="card gp-card" href="#listino"><h3>Offerte Golf Pop</h3><p>Gli abbonamenti dedicati a chi è iscritto a GolfPop nel Lazio.</p><span class="gp-go">Vedi il listino →</span></a>
 <article class="card gas-card"><div class="gas-t"><h3>Il Golf a Scuola</h3><p>Il Golf Marediroma, insieme al professionista Rolfe Passagrilli, porta ragazze e ragazzi delle scuole del territorio sul percorso, per scoprire un nuovo sport e per stare all'aria aperta!</p></div></article>
@@ -1107,7 +1116,13 @@ try{
 <div class="card"><h3>Corsi per adulti</h3><p>Piccoli gruppi, dal primo colpo al primo giro in campo.</p></div>
 <div class="card"><h3>Scuola giovanile</h3><p>Lezioni per bambini e ragazzi in un ambiente sicuro.</p></div>
 </div>
-<p style="margin-top:2rem"><a class="btn" href="#contatti">Chiedi una lezione di prova</a></p>
+<div class="lz-top lz-top2"><div><span class="h-kick">Per chi gioca già</span><h3 class="lz-h">Migliora il tuo Swing</h3></div><div class="ini-nav"><button type="button" class="ini-a" id="lz2Prev" aria-label="Riquadro precedente">‹</button><button type="button" class="ini-a" id="lz2Next" aria-label="Riquadro successivo">›</button></div></div>
+<div class="lz" id="lz2">
+<div class="card lz-c2"><h3>Golf Clinic</h3><p>Incontri in piccoli gruppi con i nostri professionisti, ognuno dedicato a un aspetto del gioco: gioco corto, putt, uscite dal bunker, strategia in campo.</p></div>
+<div class="card lz-c2"><h3>Lezioni per Giocatori</h3><p>Lezioni individuali per chi gioca già: analisi dello swing, correzione dei difetti e un piano di allenamento su misura per abbassare l'handicap.</p></div>
+<a class="card lz-c2" href="#gare"><h3>Pro-AM</h3><p>Gioca in squadra accanto a un professionista nelle nostre gare Pro-Am: il modo più divertente per imparare dai migliori, buca dopo buca.</p><span class="lz-go">Vedi le gare <span aria-hidden="true">→</span></span></a>
+</div>
+<p class="lz-cta"><a class="btn" href="#contatti">Prenota una lezione o una prova</a></p>
 <section class="pro" aria-labelledby="hPro"><span class="pro-tag">P.G.A.I. · Professional Golfers' Association of Italy</span><h2 id="hPro">Professionisti PGAI al Golf Marediroma</h2><p class="pro-i">Contatta direttamente il maestro che preferisci per fissare una lezione: la prima lezione di prova è in omaggio.</p><div class="pro-g"><article class="pro-c"><img src="img/pro-carlo-danselmo.jpg" alt="Carlo D'Anselmo, professionista P.G.A.I." width="300" height="300" loading="lazy"><div class="pro-b"><h3>Carlo D'Anselmo</h3><p class="pro-d">Disponibile dal martedì alla domenica, dalle 8:30 alle 17:00.</p><div class="pro-k"><a href="tel:+393397207110"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span>+39 339 720 7110</span></a><a href="mailto:carlodanselmo444@gmail.com"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></svg><span>carlodanselmo444@gmail.com</span></a></div></div></article><article class="pro-c"><img src="img/pro-simone-de-lorenzo.jpg" alt="Simone De Lorenzo, professionista P.G.A.I." width="300" height="300" loading="lazy"><div class="pro-b"><h3>Simone De Lorenzo</h3><p class="pro-n">Fondatore e Head Coach di SIDEgolf</p><p class="pro-d">Disponibile il giovedì e la domenica, su appuntamento.</p><div class="pro-k"><a href="tel:+393923591455"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span>+39 392 359 1455</span></a><a href="mailto:simo.delor@gmail.com"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></svg><span>simo.delor@gmail.com</span></a></div></div></article><article class="pro-c"><img src="img/pro-cristiano-martino.jpg" alt="Cristiano Martino, professionista P.G.A.I." width="300" height="300" loading="lazy"><div class="pro-b"><h3>Cristiano Martino</h3><p class="pro-d">Disponibile su appuntamento, dalle 8:30 alle 17:00.</p><div class="pro-k"><a href="tel:+393296147570"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span>+39 329 614 7570</span></a><a href="mailto:cristiano.martino@pga.it"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></svg><span>cristiano.martino@pga.it</span></a></div></div></article><article class="pro-c"><img src="img/pro-rolfe-passagrilli.jpg" alt="Rolfe Passagrilli, professionista P.G.A.I." width="300" height="300" loading="lazy"><div class="pro-b"><h3>Rolfe Passagrilli</h3><p class="pro-d">Disponibile dal martedì al venerdì e la domenica, dalle 8:30 alle 17:00.</p><div class="pro-k"><a href="tel:+393282519562"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span>+39 328 251 9562</span></a><a href="mailto:ferro7@rolfepassagrilli.it"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></svg><span>ferro7@rolfepassagrilli.it</span></a></div></div></article></div></section>
 </div></section>
 
@@ -3467,7 +3482,10 @@ document.querySelectorAll(".ini-t").forEach(function(b){b.onclick=function(){var
   window.addEventListener("hashchange",function(){auto=0;draw(0);setTimeout(req,80)});
   draw(0);setTimeout(req,300);
 })();
-(function(){var w=$("lz");if(!w)return;var step=function(d){var c=w.querySelector(".card");w.scrollBy({left:d*((c?c.offsetWidth:280)+16),behavior:"smooth"})};$("lzPrev").onclick=function(){step(-1)};$("lzNext").onclick=function(){step(1)}})();
+(function(){[["lz","lzPrev","lzNext"],["lz2","lz2Prev","lz2Next"]].forEach(function(a){var w=$(a[0]);if(!w)return;
+  var step=function(d){var c=w.querySelector(".card");w.scrollBy({left:d*((c?c.offsetWidth:280)+16),behavior:"smooth"})};$(a[1]).onclick=function(){step(-1)};$(a[2]).onclick=function(){step(1)};
+  /* le frecce servono solo se i riquadri non stanno tutti nello schermo */
+  var nav=$(a[1]).parentNode,chk=function(){nav.classList.toggle("off",w.scrollWidth<=w.clientWidth+4)};window.addEventListener("resize",chk);window.addEventListener("hashchange",function(){setTimeout(chk,60)});setTimeout(chk,300)})})();
 (function(){var w=$("ini");if(!w)return;var step=function(d){var c=w.querySelector(".ini-c");w.scrollBy({left:d*((c?c.offsetWidth:300)+16),behavior:"smooth"})};$("iniPrev").onclick=function(){step(-1)};$("iniNext").onclick=function(){step(1)}})();
 renderDays();renderSlots();
 flash("Caricamento delle disponibilità…");
