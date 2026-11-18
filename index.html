@@ -684,6 +684,12 @@ p.lz-cta{text-align:center;max-width:none;margin:2.4rem auto 0}
 .gs-grid button.sel i b{background:#fff}
 .gs-lg{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.8rem;font-size:.88rem;color:var(--muted)}
 .gs-lg span{display:inline-flex;align-items:center;gap:.4rem}
+.gs-lg .gs-fe{font:700 .9rem "Bricolage Grotesque",sans-serif;color:#C62828;width:.95rem;text-align:center}
+.gs-wd span.fe{color:#C62828}
+.gs-grid button.fe{color:#C62828}
+.gs-grid button.fe.o,.gs-grid button.fe.b{color:#B71C1C}
+.gs-grid button.fe.past{color:#E8B4B4}
+.gs-grid button.fe.sel{color:#fff}
 .gs-lg i{width:.95rem;height:.95rem;border-radius:4px;border:1.5px solid var(--sand);background:#FBF1D9}.gs-lg i.b{border-color:var(--sea);background:#E3F1F3}
 .gs-bar,.gs-act{scroll-margin-top:6rem}
 .gs-act .btn.alt.sm{margin:0}
@@ -1152,9 +1158,9 @@ try{
 </div>
 <div class="gs-cal" id="gsCal" hidden>
 <div class="gs-mh"><button type="button" id="gsPrev" aria-label="Mese precedente">‹</button><strong id="gsMon" aria-live="polite"></strong><button type="button" id="gsNext" aria-label="Mese successivo">›</button></div>
-<div class="gs-wd" aria-hidden="true"><span>lun</span><span>mar</span><span>mer</span><span>gio</span><span>ven</span><span>sab</span><span>dom</span></div>
+<div class="gs-wd" aria-hidden="true"><span>lun</span><span>mar</span><span>mer</span><span>gio</span><span>ven</span><span>sab</span><span class="fe">dom</span></div>
 <div class="gs-grid" id="gsGrid"></div>
-<div class="gs-lg"><span><i></i>Gare</span><span><i class="b"></i>Altri eventi del circolo</span></div>
+<div class="gs-lg"><span><i></i>Gare</span><span><i class="b"></i>Comunicati</span><span><b class="gs-fe">7</b>Domeniche e festivi</span></div>
 </div>
 <p class="gs-act" id="gsAct" hidden><span id="gsActT"></span><button class="btn alt sm" id="gsClr" type="button">Mostra tutte le gare</button></p>
 <div class="gs-ev" id="gsEv" hidden></div>
@@ -2425,6 +2431,14 @@ function gsEvents(d){var o=[],b=[],seen={};
   if(blocked[d])b.push({t:blocked[d].name||"Chiusura del circolo",h:"tutto il giorno"});
   else partials(d).forEach(function(p){if(p.info.type==="gara"){if(!seen[gsNorm(p.info.short)]){seen[gsNorm(p.info.short)]=1;o.push(p.info.short)}}else b.push({t:p.info.label,h:p.from===p.to?"alle "+p.from:"dalle "+p.from+" alle "+p.to})});
   return {o:o,b:b}}
+/* Festività nazionali italiane (con Pasqua e Pasquetta; San Francesco, 4 ottobre, dal 2026) */
+var FESTE={};
+function festeAnno(y){if(FESTE[y])return FESTE[y];var f={"01-01":"Capodanno","01-06":"Epifania","04-25":"Festa della Liberazione","05-01":"Festa dei Lavoratori","06-02":"Festa della Repubblica","08-15":"Ferragosto","11-01":"Ognissanti","12-08":"Immacolata Concezione","12-25":"Natale","12-26":"Santo Stefano"};
+  if(y>=2026)f["10-04"]="San Francesco d'Assisi";
+  var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,g=Math.floor((8*b+13)/25),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+19*l)/433),mo=Math.floor((h+l-7*m+90)/25),dd=(h+l-7*m+33*mo+19)%32;
+  var p=new Date(y,mo-1,dd),q=new Date(y,mo-1,dd+1),z=function(x){return String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
+  f[z(p)]="Pasqua";f[z(q)]="Lunedì dell'Angelo";return FESTE[y]=f}
+function festa(d){return festeAnno(+d.slice(0,4))[d.slice(5)]||""}
 function gsCal(){
   var g=$("gsGrid");if(!g)return;var t0=new Date();t0.setHours(0,0,0,0);var today=iso(t0);
   if(!GS.mon)GS.mon=new Date(t0.getFullYear(),t0.getMonth(),1);
@@ -2434,9 +2448,10 @@ function gsCal(){
   g.innerHTML="";for(var k=0;k<lead;k++)g.appendChild(document.createElement("span"));
   for(var dn=1;dn<=n;dn++){(function(dn){
     var d=iso(new Date(y,mo,dn)),ev=gsEvents(d),b=document.createElement("button");b.type="button";b.textContent=dn;
+    var fe=festa(d),dom=new Date(y,mo,dn).getDay()===0;if(fe||dom)b.classList.add("fe");
     if(d<today)b.classList.add("past");if(d===today)b.classList.add("today");if(ev.o.length)b.classList.add("o");if(ev.b.length)b.classList.add("b");if(GS.day===d)b.classList.add("sel");
     if(ev.o.length||ev.b.length){var dots=document.createElement("i");ev.o.slice(0,2).forEach(function(){dots.appendChild(document.createElement("b"))});ev.b.slice(0,2).forEach(function(){var x=document.createElement("b");x.className="bl";dots.appendChild(x)});b.appendChild(dots)}
-    var lab=dLong(d)+(ev.o.length?": gara "+ev.o.join(", "):"")+(ev.b.length?(ev.o.length?"; ":": ")+ev.b.map(function(x){return x.t}).join(", "):"");b.setAttribute("aria-label",lab);b.title=lab;
+    var lab=dLong(d)+(fe?" ("+fe+")":"")+(ev.o.length?": gara "+ev.o.join(", "):"")+(ev.b.length?(ev.o.length?"; ":": ")+ev.b.map(function(x){return x.t}).join(", "):"");b.setAttribute("aria-label",lab);b.title=lab;
     b.setAttribute("aria-pressed",GS.day===d?"true":"false");
     if(d<today){b.disabled=true}
     b.onclick=function(){GS.day=GS.day===d?null:d;renderGare();if(GS.day&&window.matchMedia&&matchMedia("(max-width:700px)").matches){gsOpen(false);var a=$("gsAct");if(a)a.scrollIntoView({behavior:"smooth",block:"start"})}};
@@ -2449,7 +2464,7 @@ function gsInfo(n){
     if(GS.q.trim()){t.appendChild(document.createTextNode(" per «"));var s1=document.createElement("strong");s1.textContent=GS.q.trim();t.appendChild(s1);t.appendChild(document.createTextNode("»"))}
     if(GS.day){t.appendChild(document.createTextNode(" il "));var s2=document.createElement("strong");s2.textContent=dLong(GS.day);t.appendChild(s2)}}
   e.innerHTML="";var ev=GS.day?gsEvents(GS.day).b:[];e.hidden=!ev.length;
-  if(ev.length){var p0=document.createElement("p");var st=document.createElement("strong");st.textContent="Quel giorno al circolo:";p0.appendChild(st);e.appendChild(p0);
+  if(ev.length){var p0=document.createElement("p");var st=document.createElement("strong");st.textContent="Comunicati del giorno:";p0.appendChild(st);e.appendChild(p0);
     ev.forEach(function(x){e.appendChild(el("p","",x.t+" ("+x.h+")"))})}}
 function gsOpen(v){var c=$("gsCal"),b=$("gsCalB");if(!c)return;c.hidden=!v;b.setAttribute("aria-expanded",v?"true":"false");if(v){if(GS.day){var q=GS.day.split("-");GS.mon=new Date(+q[0],+q[1]-1,1)}gsCal()}}
 (function(){var q=$("gsQ");if(!q)return;var tm=0;
