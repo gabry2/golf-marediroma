@@ -23,6 +23,8 @@ jobs:
           distribution: temurin
           java-version: 21
       - run: npm install --no-audit --no-fund
+      - run: npm install --no-audit --no-fund && node --test orari.test.mjs
+        working-directory: promemoria
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - if: always()

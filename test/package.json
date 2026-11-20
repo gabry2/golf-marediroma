@@ -5,7 +5,7 @@
   "description": "Test automatici delle regole di sicurezza Firestore e del sito contro Firebase Emulator (mai il database vero).",
   "scripts": {
     "pretest": "node -e \"require('fs').copyFileSync('../firestore.rules','firestore.rules')\"",
-    "test": "firebase emulators:exec --only firestore,auth --project demo-golf \"node --test regole.test.mjs && node --test sito.test.mjs\"",
+    "test": "firebase emulators:exec --only firestore,auth --project demo-golf \"node --test regole.test.mjs && node --test promemoria.test.mjs && node --test sito.test.mjs\"",
     "pretest:regole": "node -e \"require('fs').copyFileSync('../firestore.rules','firestore.rules')\"",
     "test:regole": "firebase emulators:exec --only firestore --project demo-golf \"node --test regole.test.mjs\""
   },
