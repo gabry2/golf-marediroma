@@ -31,8 +31,10 @@ async function semina() {
     await setDoc(doc(db, 'gare', 'G5'), { name: 'Ultimo momento', date: D_LAST, from: '09:30', to: '12:00', shotgun: false, coppie: false, chiusa: false });
     // un tee time condiviso: alice 2 giocatori, bob 1
     await setDoc(doc(db, 'teetimes', tee(D_OK, '09:30')), { at: T, n: 3, p: { alice: { n: 2, at: T }, bob: { n: 1, at: T } } });
-    // un tee time già passato di alice
-    await setDoc(doc(db, 'teetimes', tee(D_PASS, '09:30')), { at: T, n: 2, p: { alice: { n: 2, at: T } } });
+    // un tee time già passato di alice, prenotato giorni fa
+    await setDoc(doc(db, 'teetimes', tee(D_PASS, '09:30')), { at: T, n: 2, p: { alice: { n: 2, at: T - 3 * 86400000 } } });
+    // un tee time passato di bob prenotato pochi istanti fa (dentro i 10 minuti di ripensamento)
+    await setDoc(doc(db, 'teetimes', tee(D_PASS, '10:30')), { at: T, n: 1, p: { bob: { n: 1, at: T } } });
     // una partenza di gara: alice 2
     await setDoc(doc(db, 'gflights', `G1_${slotK('10:30')}`), { gara: 'G1', cap: 4, n: 2, p: { alice: { n: 2, at: T } }, pref: '10:30', at: T });
     await setDoc(doc(db, 'gflights', `G5_${slotK('09:30')}`), { gara: 'G5', cap: 4, n: 2, p: { bob: { n: 2, at: T } }, pref: '09:30', at: T });
@@ -104,10 +106,18 @@ test('tee time: ognuno annulla la propria voce, e l\'ultimo cancella il document
   await assertSucceeds(updateDoc(doc(anonimo(env, 'alice'), 'teetimes', id), { n: 1, 'p.alice': deleteField() }));
   await assertSucceeds(deleteDoc(doc(anonimo(env, 'bob'), 'teetimes', id)));
 });
-test('tee time: annullare è sempre possibile, aggiungere a un orario passato no', async () => {
+test('tee time: dopo le 19 del giorno prima non si annulla da soli (né si toglie un giocatore)', async () => {
   const id = tee(D_PASS, '09:30');
+  await assertFails(deleteDoc(doc(anonimo(env, 'alice'), 'teetimes', id)));
+  await assertFails(updateDoc(doc(anonimo(env, 'alice'), 'teetimes', id), { n: 1, 'p.alice.n': 1 }));
   await assertFails(updateDoc(doc(anonimo(env, 'alice'), 'teetimes', id), { n: 3, 'p.alice.n': 3 }));
-  await assertSucceeds(deleteDoc(doc(anonimo(env, 'alice'), 'teetimes', id)));
+  await assertSucceeds(deleteDoc(doc(admin(env), 'teetimes', id)));
+});
+test('tee time: entro 10 minuti dalla prenotazione si può sempre annullare', async () => {
+  await assertSucceeds(deleteDoc(doc(anonimo(env, 'bob'), 'teetimes', tee(D_PASS, '10:30'))));
+});
+test('tee time: l\'ora della prenotazione non può essere spostata nel futuro', async () => {
+  await assertFails(setDoc(doc(anonimo(env, 'alice'), 'teetimes', tee(D_OK, '10:30')), { at: T, n: 2, p: { alice: { n: 2, at: T + 86400000 } } }));
 });
 test('tee time: campi estranei rifiutati', async () => {
   await assertFails(setDoc(doc(anonimo(env, 'alice'), 'teetimes', tee(D_OK, '10:30')), { ...nuovo(2), nota: 'x' }));

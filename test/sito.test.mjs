@@ -102,6 +102,8 @@ test('sito: un visitatore anonimo prenota un tee time e lo annulla', async () =>
   const ct = await leggiTutto('contacts');
   assert.equal(ct[uid].list[0].slot, id);
   await pg.screenshot({ path: new URL('./risultati/tee-prenotato.png', import.meta.url).pathname });
+  // dallo stesso dispositivo un tee time ogni 2 ore: gli orari vicini risultano in attesa
+  assert.ok(await attendi(() => pg.locator('#slots .slot.wait').count().then((n) => n > 0)), 'manca il blocco delle 2 ore');
   await pg.locator('#slots .slot.mine').first().click();
   assert.ok(await attendi(async () => Object.keys(await leggiTutto('teetimes')).length === 0), 'annullamento non riuscito');
   assert.deepEqual(errori, []);

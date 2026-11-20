@@ -41,6 +41,11 @@ nav{display:flex;flex-wrap:nowrap;gap:1rem;align-items:center;justify-content:sp
 nav .logo{display:block;line-height:0;color:#fff}
 .lg{display:block;height:58px;width:auto}
 .nav-r{display:flex;align-items:center;gap:.6rem}
+.soc{display:flex;align-items:center;gap:.15rem;margin-right:.2rem}
+.soc a{width:2.1rem;height:2.1rem;border-radius:50%;display:grid;place-items:center;color:rgba(255,255,255,.78);transition:color .2s,background .2s}
+.soc a:hover,.soc a:focus-visible{color:#fff;background:rgba(255,255,255,.12)}
+.soc svg{width:1.15rem;height:1.15rem;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:380px){.soc a{width:1.8rem}.soc{margin-right:0}}
 nav a.cta{background:#fff;color:var(--green);border-radius:999px;padding:.6rem 1.2rem;text-decoration:none;font-weight:800;font-size:.98rem;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.12)}
 nav a.cta:hover{background:#FFF8E6;color:var(--green-d)}
 nav a.cta .short{display:none}
@@ -582,6 +587,12 @@ p.lz-cta{text-align:center;max-width:none;margin:2.4rem auto 0}
 .g-hero-t{position:absolute;left:0;right:0;bottom:0;z-index:1;padding-bottom:clamp(1.2rem,3vw,2rem)}
 .g-hero-t h2{color:#fff;margin:0;text-shadow:0 2px 16px rgba(0,0,0,.35)}
 .g-hero-t .h-kick{margin-bottom:.6rem}
+/* Gare: foto di gruppo intera, il titolo sta sul prato sotto i piedi dei giocatori */
+@media (min-width:701px){.g-hero.gh-gruppo{height:auto;aspect-ratio:2.08}.g-hero.gh-gruppo img{object-position:center 100%}
+  /* Lezioni: i giocatori sono a sinistra, il titolo va a destra */
+  .g-hero.gh-dx{height:auto;aspect-ratio:2.9}.g-hero.gh-vista{height:auto;aspect-ratio:2.2}
+  .g-hero.gh-dx .g-hero-t{text-align:right}.g-hero.gh-dx .h-kick{border-left:0;padding-left:0;border-right:3px solid var(--sand);padding-right:.6rem}}
+@media (max-width:700px){.g-hero.gh-gruppo img{aspect-ratio:3/2}}
 @media (max-width:700px){.g-hero{height:auto;background:#0B2214}.g-hero img{height:auto;aspect-ratio:960/550}.g-hero::after{background:linear-gradient(to top,#0B2214 0,#0B2214 26%,rgba(11,34,20,0) 46%)}.g-hero-t{position:relative;margin-top:-1.4rem;padding-bottom:1.3rem}}
 .ev-promo{display:flex;align-items:center;justify-content:space-between;gap:1rem 1.5rem;flex-wrap:wrap;margin:0 0 1.8rem;padding:1rem 1.2rem 1rem 1.3rem;border-radius:14px;background:linear-gradient(120deg,#FBF4E2,#F4F7F5);border:1px solid #E8D9AE}
 .ev-promo strong{display:block;font:600 1.15rem "Playfair Display","Times New Roman",Times,Georgia,serif;color:var(--ink)}
@@ -1013,6 +1024,7 @@ try{
 <nav aria-label="Principale">
 <a class="logo" href="#home" aria-label="Golf Marediroma, home"><svg class="lg" viewBox="46 216 502 388" aria-hidden="true"><use href="#gmdr"/></svg></a>
 <div class="nav-r">
+<div class="soc"><a href="https://www.instagram.com/golfmarediroma/" target="_blank" rel="noopener" aria-label="Instagram del Golf Marediroma" title="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2l1.4-2h4.2l1.4 2h2A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.4" r="3.6"/></svg></a><a href="https://www.facebook.com/profile.php?id=61555593376704" target="_blank" rel="noopener" aria-label="Facebook del Golf Marediroma" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 17H10l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg></a></div>
 <a class="cta" href="#tee-time"><span class="long">Prenota tee time</span><span class="short">Prenota</span></a>
 <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Apri il menu">
 <svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><g class="iron i1"><rect x="3" y="6.6" width="7" height="2.8" rx="1.4"/><line x1="10" y1="8" x2="25" y2="8"/><path d="M24.5 6.2 L29 8.4 Q29.8 10.4 28 10.4 L24 9.6 Z"/></g><g class="iron i2"><rect x="3" y="14.6" width="7" height="2.8" rx="1.4"/><line x1="10" y1="16" x2="25" y2="16"/><path d="M24.5 14.2 L29 16.4 Q29.8 18.4 28 18.4 L24 17.6 Z"/></g><g class="iron i3"><rect x="3" y="22.6" width="7" height="2.8" rx="1.4"/><line x1="10" y1="24" x2="25" y2="24"/><path d="M24.5 22.2 L29 24.4 Q29.8 26.4 28 26.4 L24 25.6 Z"/></g></svg>
@@ -1022,12 +1034,12 @@ try{
 <li><a href="#home">Home</a></li>
 <li class="has-sub"><div class="sub-h"><a href="#circolo">Il Circolo</a><button type="button" class="sub-t" aria-expanded="false" aria-controls="subC" aria-label="Mostra le sezioni del Circolo"></button></div><span class="trail" aria-hidden="true"></span><span class="ball" aria-hidden="true"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.6" fill="#fff" stroke="#1F6B3A" stroke-width="1.6"/><g fill="#A9C2B1"><circle cx="7" cy="7.2" r="1.1"/><circle cx="11.2" cy="5.8" r="1.1"/><circle cx="13.8" cy="9.6" r="1.1"/><circle cx="9.4" cy="10.6" r="1.1"/><circle cx="6.3" cy="12.8" r="1.1"/><circle cx="12" cy="13.8" r="1.1"/></g></svg></span>
 <div class="subw"><ul class="sub" id="subC"><li><a href="#mappa">Mappa delle 9 buche</a></li><li><a href="#percorso">Il percorso</a></li><li><a href="#stroke">Stroke card</a></li><li><a href="#pratica">Campo pratica</a></li></ul></div></li>
+<li><a href="#tee-time">Prenota tee time</a></li>
 <li><a href="#gare">Gare</a></li>
 <li><a href="#imparare">Lezioni e Prova</a></li>
-<li><a href="#abbonati">Abbonati</a></li>
-<li><a href="#tee-time">Prenota tee time</a></li>
-<li><a href="#gallery">Foto Gallery</a></li>
 <li><a href="#chisiamo">Chi Siamo</a></li>
+<li><a href="#abbonati">Abbonarsi</a></li>
+<li><a href="#gallery">Foto Gallery</a></li>
 <li><a href="#contatti">Contatti</a></li>
 </ul>
 </nav>
@@ -1080,7 +1092,7 @@ try{
 </div></section>
 
 <section class="page" id="p-circolo">
-<div class="g-hero"><picture><source media="(max-width:700px)" srcset="img/circolo-aereo-960.jpg"><img src="img/circolo-aereo-1920.jpg" alt="Vista aerea del lago grande e dei bunker del Golf Marediroma, con il mare all'orizzonte" fetchpriority="high" style="object-position:center 58%"></picture><div class="wrap g-hero-t"><span class="h-kick">9 buche, par 35, tra Ardea e il mare.</span><h2>Il Golf a Portata di Quartiere</h2></div></div>
+<div class="g-hero gh-vista"><picture><source media="(max-width:700px)" srcset="img/circolo-vista-960.jpg"><img src="img/circolo-vista-1920.jpg" alt="Vista aerea del Golf Marediroma al tramonto: i laghi, i green e il mare all'orizzonte" fetchpriority="high" style="object-position:center 52%"></picture><div class="wrap g-hero-t"><span class="h-kick">9 buche, par 35, tra Ardea e il mare.</span><h2>Il Golf a Portata di Quartiere</h2></div></div>
 <div class="wrap">
 <div class="c-intro pg-int"><h2>Il Circolo</h2>
 <p class="lead">Un percorso immerso nel verde, tra natura e tranquillità, capace di sorprendere i principianti e mettere alla prova anche i golfisti più esperti.</p>
@@ -1103,7 +1115,7 @@ try{
 <div class="grid"><div class="card"><h3>Driving range</h3><p>100×220 m, con target a diverse distanze.</p></div><div class="card"><h3>Pitching green</h3><p>Con bunker di pratica attiguo.</p></div><div class="card"><h3>Putting green</h3><p>9 buche per allenare il gioco sul green.</p></div></div></section>
 </div></section>
 
-<section class="page" id="p-imparare"><div class="g-hero"><picture><source media="(max-width:700px)" srcset="img/lezioni-960.jpg"><img src="img/lezioni-1920.jpg" alt="Due golfisti camminano sul fairway del Golf Marediroma, uno con la sacca in spalla" style="object-position:center 70%"></picture><div class="wrap g-hero-t"><span class="h-kick">Perfezionando lo Swing</span><h2>Lezioni e Prova</h2></div></div>
+<section class="page" id="p-imparare"><div class="g-hero gh-dx"><picture><source media="(max-width:700px)" srcset="img/lezioni-960.jpg"><img src="img/lezioni-1920.jpg" alt="Due golfisti camminano sul fairway del Golf Marediroma, uno con la sacca in spalla" style="object-position:center 100%"></picture><div class="wrap g-hero-t"><span class="h-kick">Perfezionando lo Swing</span><h2>Lezioni e Prova</h2></div></div>
 <div class="wrap">
 <p class="lead pg-lead">Che tu sia al tuo primo swing o voglia perfezionare il tuo gioco, i nostri professionisti ti accompagneranno con lezioni pensate per ogni livello. Un passo alla volta, impareremo, miglioreremo e cresceremo insieme!</p>
 <section class="gpop" aria-labelledby="hGpop">
@@ -1149,7 +1161,7 @@ try{
 <p><a class="gp-b" href="#contatti">Chiedi le offerte Golf Pop <span aria-hidden="true">→</span></a></p></section>
 </div></section>
 
-<section class="page" id="p-gare"><div class="g-hero"><picture><source media="(max-width:700px)" srcset="img/gare-960.jpg"><img src="img/gare-1920.jpg" alt="Un gruppo di golfisti in posa sul tee del Golf Marediroma, con il percorso e gli alberi alle spalle"></picture><div class="wrap g-hero-t"><span class="h-kick">Il calendario del circolo</span><h2>Gare</h2></div></div><div class="wrap">
+<section class="page" id="p-gare"><div class="g-hero gh-gruppo"><picture><source media="(max-width:700px)" srcset="img/gare-gruppo-960.jpg"><img src="img/gare-gruppo-1920.jpg" alt="I giocatori di una gara del Golf Marediroma brindano tutti insieme sul prato del circolo"></picture><div class="wrap g-hero-t"><span class="h-kick">Il calendario del circolo</span><h2>Gare</h2></div></div><div class="wrap">
 <p class="lead">Il calendario delle gare del circolo. Ti iscrivi con nome e cognome; nelle gare con partenze a orario puoi indicare una preferenza.</p>
 <div class="ev-promo"><div><strong>Vuoi creare e sponsorizzare una tua gara?</strong><span>Ti illustriamo meglio pacchetti, gadget personalizzati e premi.</span></div><a class="btn" href="#crea-evento">Crea il tuo evento<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></a></div>
 <div class="gs-bar" role="search" aria-label="Cerca tra le gare">
@@ -1186,13 +1198,13 @@ try{
 </article>
 <article class="ev-c prem">
 <h3>Premium</h3><p class="ev-tg">Più visibilità per il tuo marchio.</p><p class="ev-pr">Prezzo su richiesta</p>
-<div class="ev-fm" aria-label="Formula"><span>Classica</span><span>Pro-Am</span></div>
-<ul><li class="ev-all">Tutto lo Standard</li><li>Scelta tra gara classica e Pro-Am</li><li>Pubblicità sui social del circolo e locandina dedicata</li><li>Anche palline e cappellini personalizzati</li><li>Premi per i primi classificati e premiazione al circolo</li></ul>
+<div class="ev-fm" aria-label="Formula"><span>Classica</span><span>Formula PRO AM</span></div>
+<ul><li class="ev-all">Tutto lo Standard</li><li>Scelta tra gara classica e Formula PRO AM</li><li>Pubblicità sui social del circolo e locandina dedicata</li><li>Anche palline e cappellini personalizzati</li><li>Premi per i primi classificati e premiazione al circolo</li></ul>
 <button class="btn" type="button" data-ev="Premium">Scegli Premium</button>
 </article>
 <article class="ev-c tot">
 <h3>Sponsor totale</h3><p class="ev-tg">L'evento porta il tuo nome, dall'inizio alla fine.</p><p class="ev-pr">Prezzo su richiesta</p>
-<div class="ev-fm" aria-label="Formula"><span>Classica</span><span>Pro-Am</span></div>
+<div class="ev-fm" aria-label="Formula"><span>Classica</span><span>Formula PRO AM</span></div>
 <ul><li class="ev-all">Tutto il Premium</li><li>Il tuo marchio su tutta la comunicazione dell'evento</li><li>Anche polo e zaini personalizzati</li><li>Premi per tutte le categorie e premiazione con il tuo marchio</li><li>Le foto ufficiali dell'evento nella nostra Foto Gallery</li></ul>
 <button class="btn" type="button" data-ev="Sponsor totale">Scegli Sponsor totale</button>
 </article>
@@ -1208,7 +1220,7 @@ try{
 <div class="ct-2"><label>Azienda<input id="evAz" autocomplete="organization" maxlength="100" required></label><label>Referente<input id="evRf" autocomplete="name" maxlength="80" required></label></div>
 <div class="ct-2"><label>Email<input id="evE" type="email" autocomplete="email" maxlength="120" required></label><label>Telefono<input id="evT" type="tel" autocomplete="tel" maxlength="30" required></label></div>
 <fieldset><legend>Pacchetto</legend><div class="ev-rd" id="evPk"><label><input type="radio" name="evPk" value="Standard"> Standard</label><label><input type="radio" name="evPk" value="Premium"> Premium</label><label><input type="radio" name="evPk" value="Sponsor totale"> Sponsor totale</label></div></fieldset>
-<fieldset><legend>Formula di gioco</legend><div class="ev-rd" id="evFm"><label><input type="radio" name="evFm" value="Classica" checked> Classica</label><label><input type="radio" name="evFm" value="Pro-Am" id="evPA"> Pro-Am</label></div><p class="ev-h" id="evFmH">La formula Pro-Am è disponibile con Premium e Sponsor totale.</p></fieldset>
+<fieldset><legend>Formula di gioco</legend><div class="ev-rd" id="evFm"><label><input type="radio" name="evFm" value="Classica" checked> Classica</label><label><input type="radio" name="evFm" value="Formula PRO AM" id="evPA"> Formula PRO AM</label></div><p class="ev-h" id="evFmH">La formula Formula PRO AM è disponibile con Premium e Sponsor totale.</p></fieldset>
 <div class="ct-2"><label>Data proposta<input id="evD" type="date" required></label><label>Data alternativa <small>(facoltativa)</small><input id="evD2" type="date"></label></div>
 <p class="ev-h" id="evDH" hidden></p>
 <label>Giocatori previsti <small>(facoltativo)</small><input id="evN" type="number" min="4" max="200" step="1" inputmode="numeric"></label>
@@ -1721,10 +1733,12 @@ function renderSlots(){try{renderHome()}catch(e){}
     if(blockedS[id]&&!si.n){var bi=blkInfo(blockedS[id]);btn.classList.add("past","bk-"+bi.type);btn.disabled=true;btn.textContent=t;var sm=document.createElement("small");sm.textContent=bi.short;btn.appendChild(sm);btn.title=t+" – "+bi.label}
     else if(past){btn.classList.add("past");btn.disabled=true;btn.innerHTML=t+"<small>Passato</small>"}
     else if(si.n){
-      if(mineP){btn.classList.add("mine");btn.innerHTML=t+"<small>Tuo"+(fr>0?" · "+fr+(fr===1?" libero":" liberi"):"")+"</small>";btn.title="Tocca per annullare la tua prenotazione";btn.onclick=function(){cancelMine(id,t)}}
+      if(mineP){btn.classList.add("mine");btn.innerHTML=t+"<small>Tuo"+(fr>0?" · "+fr+(fr===1?" libero":" liberi"):"")+"</small>";btn.title=canCancel(id)?"Tocca per annullare la tua prenotazione (possibile fino alle 19:00 del giorno prima)":CANC_TXT;btn.onclick=function(){cancelMine(id,t)}}
+      else if(fr>0&&gap2h(selDate,t)){var g2=gap2h(selDate,t);btn.classList.add("past","wait");btn.disabled=true;btn.innerHTML=t+"<small>Ogni 2 ore</small>";btn.title="Da questo dispositivo hai già le "+g2+": si prenota un tee time ogni 2 ore."}
       else if(fr>0){btn.classList.add("part");btn.innerHTML=t+"<small>"+postiTxt(fr)+"</small>";if(selSlot===t)btn.classList.add("sel");btn.onclick=function(){pick(t)};if(!db)btn.disabled=true;if(isOwner)btn.title="Prenotato da "+who(id)}
       else{btn.classList.add("busy");btn.innerHTML=t+"<small>Completo</small>";if(isOwner){btn.title="Prenotato da "+who(id)+". Tocca per annullare.";btn.onclick=function(){adminCancel(id,t)}}else btn.disabled=true}
     }
+    else if(gap2h(selDate,t)){var g3=gap2h(selDate,t);btn.classList.add("past","wait");btn.disabled=true;btn.innerHTML=t+"<small>Ogni 2 ore</small>";btn.title="Da questo dispositivo hai già le "+g3+": si prenota un tee time ogni 2 ore."}
     else{
       btn.innerHTML=t+"<small>Libero</small>";
       if(selSlot===t)btn.classList.add("sel");
@@ -1744,6 +1758,18 @@ function nOf(cur){return !cur?0:(cur.p&&typeof cur.p==="object"&&!Array.isArray(
 async function txDoc(ref,fn){if(ref.tx)return ref.tx(fn);var sn=await ref.get(),cur=sn.exists?(sn.data()||null):null,nx=await fn(cur);if(nx===undefined)return;if(nx===null)await ref.delete();else await ref.set(nx)}
 function nmOk(l){return l.every(function(p){return p.first.length<=60&&p.last.length<=60})}
 function pSum(pa){return pa.reduce(function(a,x){return a+(+x.n||0)},0)}
+/* minuti dalla mezzanotte di "HH:MM" */
+function tMin(t){return +t.slice(0,2)*60+ +t.slice(3,5)}
+function mHM(m){return pad(Math.floor(m/60))+":"+pad(m%60)}
+/* Dallo stesso dispositivo un tee time ogni 2 ore: restituisce l'orario già prenotato troppo vicino, oppure "" */
+function gap2h(date,t){if(!uid||canAdmin)return "";var m=tMin(t),hit="";
+  Object.keys(booked).forEach(function(id){if(hit||id.slice(0,10)!==date)return;var t2=id.slice(11,13)+":"+id.slice(13,15);if(t2===t)return;
+    if(partsOf(booked[id]).some(function(q){return q.by===uid})&&Math.abs(tMin(t2)-m)<120)hit=t2});return hit}
+/* Si annulla da soli fino alle 19:00 del giorno prima (o entro 10 minuti dalla prenotazione) */
+function cancelDL(id){var q=id.slice(0,10).split("-");return new Date(+q[0],+q[1]-1,+q[2]-1,19,0,0)}
+function canCancel(id){if(canAdmin)return true;if(Date.now()<cancelDL(id).getTime())return true;
+  var me=partsOf(booked[id]).filter(function(q){return q.by===uid})[0];return !!(me&&me.at&&Date.now()-me.at<600000)}
+var CANC_TXT="Si può annullare da soli fino alle 19:00 del giorno prima. Per annullare ora chiami la segreteria al +39 06 913 3250.";
 function slotInfo(id){var q=partsOf(booked[id]);return {parts:q,n:q.reduce(function(t,x){return t+(+x.n||0)},0)}}
 function pick(t){selSlot=t;var fr=4-slotInfo(selDate+"_"+t.replace(":","")).n;$("bookTitle").textContent="Tee time alle "+t+" di "+longDate()+(fr<4?" ("+postiTxt(fr)+")":"");
   var pl=$("pl"),v=+pl.value;pl.innerHTML='<option value="">Scegli…</option>';for(var k=1;k<=fr;k++)pl.add(new Option(String(k),String(k)));pl.value=(v&&v<=fr)?String(v):"";buildNames();$("msg").textContent="";$("msg").className="msg";$("book").hidden=false;renderSlots();$("pl").focus()}
@@ -2248,6 +2274,7 @@ async function bookSlot(date,t,names,em,tel){
   if(days.map(iso).indexOf(date)<0)throw new Error("Si può prenotare solo nei prossimi 14 giorni.");
   var now=new Date();if(date===iso(now)&&(pad(now.getHours())+":"+pad(now.getMinutes()))>t)throw new Error("Questo orario è già passato.");
   if(blocked[date])throw new Error("In questa giornata i tee time sono chiusi ("+(blocked[date].name||"chiusura del circolo")+").");
+  var g2h=gap2h(date,t);if(g2h){var mm=tMin(g2h);throw new Error("Dallo stesso dispositivo si può prenotare un tee time ogni 2 ore: ha già le "+g2h+", quindi può scegliere fino alle "+mHM(mm-120)+" o dalle "+mHM(mm+120)+".")}
   var g=garaAt(date,t);if(g)throw new Error("In questo orario c'è la gara «"+g.name+"»: ci si iscrive alla gara, non al tee time.");
   var id=date+"_"+t.replace(":","");if(blockedS[id])throw new Error("Questo orario è riservato dal circolo ("+blkInfo(blockedS[id]).label+").");
   if(!names.length||names.length>4)throw new Error("Servono da 1 a 4 giocatori.");
@@ -2289,6 +2316,7 @@ async function teeSub(id,n){
     var dec=n?Math.min(n,+m.n||0):(+m.n||0);m.n=(+m.n||0)-dec;if(m.n<=0)delete p[uid];var tot=nOf(cur)-dec;
     if(!Object.keys(p).length||tot<=0)return null;return {at:cur.at,n:tot,p:p}})}
 async function doCancelTee(id){
+  if(!canCancel(id))throw new Error(CANC_TXT);
   await teeSub(id,0);
   var mine=null;
   try{var cr=db.doc("contacts/"+uid),cs=await cr.get();if(cs.exists){var cl=cs.data().list||[];mine=cl.filter(function(x){return x.slot===id})[0]||null;await cr.set({list:cl.filter(function(x){return x.slot!==id})})}}catch(e2){}
@@ -2299,8 +2327,9 @@ async function doCancelTee(id){
       "Per prenotare di nuovo":"Dalla pagina Prenota tee time del sito o chiedendo a Remo nella chat."})}
 }
 async function cancelMine(id,t){
+  if(!canCancel(id)){flash(CANC_TXT);return}
   if(!confirm("Annullare la tua prenotazione delle "+t+"?"))return;
-  try{await doCancelTee(id);flash("Prenotazione annullata.")}catch(e){flash("Non è stato possibile annullare.")}
+  try{await doCancelTee(id);flash("Prenotazione annullata.")}catch(e){flash(e&&e.message===CANC_TXT?CANC_TXT:"Non è stato possibile annullare.")}
 }
 function mailAdmCancel(id,why){
   var d=id.slice(0,10),t=id.slice(11,13)+":"+id.slice(13,15),seen={};
@@ -2900,7 +2929,7 @@ $("pcAdd").onclick=async function(){
 (function(){var f=$("evForm");if(!f)return;
   function pk(){var r=f.querySelector('input[name="evPk"]:checked');return r?r.value:""}
   function syncFm(){var p=pk(),std=p==="Standard";$("evPA").disabled=std;if(std){f.querySelector('input[name="evFm"][value="Classica"]').checked=true}
-    $("evFmH").textContent=std?"Con lo Standard la gara è nella formula classica. Per la Pro-Am scegli Premium o Sponsor totale.":"La formula Pro-Am è disponibile con Premium e Sponsor totale."}
+    $("evFmH").textContent=std?"Con lo Standard la gara è nella formula classica. Per la Formula PRO AM scegli Premium o Sponsor totale.":"La Formula PRO AM è disponibile con Premium e Sponsor totale."}
   [].forEach.call(f.querySelectorAll('input[name="evPk"]'),function(r){r.addEventListener("change",syncFm)});
   [].forEach.call(document.querySelectorAll("#p-crea-evento [data-ev]"),function(b){b.onclick=function(){var r=f.querySelector('input[name="evPk"][value="'+b.getAttribute("data-ev")+'"]');if(r)r.checked=true;syncFm();
     f.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(function(){$("evAz").focus({preventScroll:true})},450)}});
@@ -3273,7 +3302,7 @@ async function cxInput(q){
     var it=cx.it;cx=null;qchips([]);
     try{if(it.type==="t")await doCancelTee(it.id);else await doCancelIscr(it.x);
       return "Fatto: ho annullato "+itLbl(it)+". Se desidera, posso aiutarLa a prenotare un altro orario."}
-    catch(e){return "Mi dispiace, non è stato possibile annullare. Può riprovare o contattare la segreteria al +39 06 913 3250."}}
+    catch(e){if(e&&e.message===CANC_TXT)return "Mi dispiace: "+CANC_TXT.charAt(0).toLowerCase()+CANC_TXT.slice(1);return "Mi dispiace, non è stato possibile annullare. Può riprovare o contattare la segreteria al +39 06 913 3250."}}
   cx=null;qchips([]);return "Va bene, la prenotazione resta confermata."}
 
 var PROS=[
@@ -3287,7 +3316,7 @@ function staffAns(lq){var x=STAFF.filter(function(t){return t[1].test(lq)})[0];i
 var NAVP=[[/(crea il tuo evento|sponsor|evento aziendal|eventi aziendal)/,"crea-evento","la pagina Crea il tuo evento, con i pacchetti Standard, Premium e Sponsor totale"],[/(foto del percorso)/,"foto-percorso","le Foto del Percorso"],[/(gallery|galleria|foto)/,"gallery","la Foto Gallery, con le foto dei nostri eventi"],[/(home|pagina iniziale|inizio)/,"home","la Home"],[/(lezion|prova|impara|golf ?pop)/,"imparare","la pagina Lezioni e Prova, con la GolfPop Card e i nostri professionisti"],
  [/(mappa|buche)/,"mappa","la mappa delle 9 buche"],[/(percorso)/,"percorso","la pagina del percorso"],[/(stroke)/,"stroke","la stroke card"],[/(pratica|driving)/,"pratica","il campo pratica"],
  [/(circolo)/,"circolo","la pagina Il Circolo"],[/(gar[ae]|torne)/,"gare","la pagina Gare, con tutti i dettagli e le locandine"],[/(listino|offerte)/,"listino","il listino delle offerte Golf Pop"],
- [/(abbonat|abbonament)/,"abbonati","la pagina Abbonati"],[/(tee ?time|prenota)/,"tee-time","la pagina Prenota tee time"],[/(chi siamo|staff|storia)/,"chisiamo","la pagina Chi Siamo"],
+ [/(abbonat|abbonament)/,"abbonati","la pagina Abbonarsi"],[/(tee ?time|prenota)/,"tee-time","la pagina Prenota tee time"],[/(chi siamo|staff|storia)/,"chisiamo","la pagina Chi Siamo"],
  [/(contatt|dove siete|mappa google)/,"contatti","la pagina Contatti"]];
 function navAns(lq){
   if(!/^(apri|vai|vorrei vedere|fammi vedere|mostrami|portami|andiamo)\b/.test(lq))return null;
@@ -3366,7 +3395,7 @@ async function handleLocal(q,e){
     else if(st&&!wz&&!gw&&!cx)r=st;
     else if(/\b(cart|golf ?cart|golfcart)\b|macchinin/.test(lq)&&!wz&&!gw&&!cx&&!/tee ?time/.test(lq))r=cartAns(lq);
     else if(EVQ.test(lq)&&!cx&&!CQ.test(lq)){wz=null;gw=null;lw=null;qchips(["Apri la pagina Crea il tuo evento"]);
-      r="Con piacere! Il Golf Marediroma organizza gare per aziende e sponsor con tre pacchetti: Standard, Premium e Sponsor totale. Ci occupiamo noi di iscrizioni, pubblicità, gadget personalizzati e, nei pacchetti più completi, anche dei premi. Con Premium e Sponsor totale può scegliere tra la gara classica e la Pro-Am, e con tutti i pacchetti può proporre una data. Trova i dettagli e il modulo di richiesta nella pagina Crea il tuo evento."}
+      r="Con piacere! Il Golf Marediroma organizza gare per aziende e sponsor con tre pacchetti: Standard, Premium e Sponsor totale. Ci occupiamo noi di iscrizioni, pubblicità, gadget personalizzati e, nei pacchetti più completi, anche dei premi. Con Premium e Sponsor totale può scegliere tra la gara classica e la Formula PRO AM, e con tutti i pacchetti può proporre una data. Trova i dettagli e il modulo di richiesta nella pagina Crea il tuo evento."}
     else if(ca&&proOf(ca[2])){var pp=proOf(ca[2]);if(ca[1]==="chiama")location.href="tel:"+pp.tel;else location.href="mailto:"+pp.em+"?subject="+encodeURIComponent("Lezione di golf al Golf Marediroma");r=(ca[1]==="chiama"?"Sto aprendo la chiamata a ":"Sto aprendo una nuova email per ")+pp.n+"."}
     else if(/prendi la (tua )?golf ?pop card/.test(lq)){try{window.open(GOLFPOP_URL,"_blank","noopener")}catch(x2){}qchips(["Apri la pagina Lezioni e Prova"]);r="Ho aperto la pagina della GolfPop Card in una nuova scheda. Se non si fosse aperta, trova il pulsante nella pagina Lezioni e Prova."}
     else if(lw&&(lr=lwInput(lq))!==null)r=lr;

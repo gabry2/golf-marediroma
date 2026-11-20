@@ -51,7 +51,7 @@ service cloud.firestore {
       return !(me() in d.p) || (
         d.p[me()] is map && d.p[me()].keys().hasOnly(['n', 'at', 'c'])
         && d.p[me()].n is int && d.p[me()].n >= 1 && d.p[me()].n <= 4
-        && d.p[me()].at is int
+        && d.p[me()].at is int && d.p[me()].at <= request.time.toMillis() + 600000
         && (!('c' in d.p[me()]) || (d.p[me()].c is int && d.p[me()].c >= 1 && d.p[me()].c <= 3)));
     }
     function okShare(od, cap) {
@@ -62,6 +62,7 @@ service cloud.firestore {
         && nd.n == od.n - mine(od) + mine(nd);
     }
     function grows(od) { return mine(request.resource.data) > mine(od); }
+    function shrinks(od) { return mine(request.resource.data) < mine(od); }
     function onlyMine() { return signedIn() && resource.data.p is map && resource.data.p.keys().hasOnly([me()]); }
     function EMPTY() { return {'n': 0, 'p': {}}; }
 
@@ -85,6 +86,11 @@ service cloud.firestore {
     }
     function outside(g, m) { return m < hm(g.from) || m > hm(g.to);
     }
+    // si annulla da soli fino alle 19:00 del giorno prima (ora di Roma), o entro 10 minuti dalla prenotazione
+    function canCancelTee(id, od) {
+      return request.time < dayTs(teeDate(id)) - duration.value(6, 'h')
+        || od.p[me()].at > request.time.toMillis() - 600000;
+    }
     match /teetimes/{id} {
       allow read: if true;
       allow create: if isAdmin() || (teeId(id)
@@ -93,8 +99,9 @@ service cloud.firestore {
       allow update: if isAdmin() || (request.resource.data.keys().hasOnly(['at', 'n', 'p'])
         && request.resource.data.at == resource.data.at
         && okShare(resource.data, 4)
-        && (!grows(resource.data) || teeBookable(id)));
-      allow delete: if isAdmin() || onlyMine();
+        && (!grows(resource.data) || teeBookable(id))
+        && (!shrinks(resource.data) || canCancelTee(id, resource.data)));
+      allow delete: if isAdmin() || (onlyMine() && canCancelTee(id, resource.data));
     }
 
     // ---- Gare ----
