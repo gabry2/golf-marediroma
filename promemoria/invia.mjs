@@ -6,6 +6,7 @@
 // Variabili (segreti di GitHub):
 //   FIREBASE_SERVICE_ACCOUNT  JSON della chiave dell'account di servizio (obbligatoria, tranne con l'emulatore)
 //   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_FROM   invio tramite un proprio server di posta (consigliato)
+//   MAIL_REPLYTO  a chi arrivano le risposte dei giocatori (di base la segreteria)
 //   senza SMTP: invio tramite FormSubmit, come le conferme del sito (copia anche alla segreteria)
 //   MAIL_DRYRUN=1   non invia nulla: stampa le email (usato nei test)
 //   ORA_PROVA       data e ora finta in formato ISO (solo per i test)
@@ -41,7 +42,7 @@ async function invia(to, oggetto, righe) {
       + `<h2 style="color:#14502A;font-weight:600">${esc(oggetto)}</h2>`
       + righe.map(([k, v]) => (k ? `<p style="margin:.4em 0"><strong>${esc(k)}:</strong> ${esc(v)}</p>` : `<p>${esc(v)}</p>`)).join('')
       + `<p style="margin-top:1.5em;color:#5b6b61;font-size:14px">Golf Marediroma · Via Enna, 30 – 00040 Ardea (RM) · ${SEGRETERIA}</p></div>`;
-    await trasporto.sendMail({ from: E.MAIL_FROM || E.SMTP_USER, to, subject: oggetto, text: testo, html });
+    await trasporto.sendMail({ from: E.MAIL_FROM || E.SMTP_USER, replyTo: E.MAIL_REPLYTO || 'segreteriasportiva@golfmarediroma.com', to, subject: oggetto, text: testo, html });
     return;
   }
   // FormSubmit, come le conferme del sito: arriva al giocatore in copia e alla segreteria
