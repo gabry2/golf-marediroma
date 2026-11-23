@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
+    inputs:
+      prova_a:
+        description: "Per una prova: indirizzo a cui mandare un'email di prova (vuoto = funzionamento normale)"
+        required: false
 concurrency:
   group: promemoria
   cancel-in-progress: false
@@ -30,3 +34,4 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           MAIL_REPLYTO: ${{ secrets.MAIL_REPLYTO }}
+          PROVA_A: ${{ github.event.inputs.prova_a }}

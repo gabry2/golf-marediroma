@@ -57,6 +57,16 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const nomi = (pl) => (pl || []).map((p) => `${p.first || ''} ${p.last || ''}`.trim()).filter(Boolean).join(', ') || '—';
 const dLong = (ymd) => new Date(roma(ymd, '12:00')).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long', day: 'numeric', month: 'long' });
 
+// Prova: con PROVA_A=indirizzo invia solo un'email di prova e si ferma
+if (E.PROVA_A) {
+  await invia(E.PROVA_A, 'Prova promemoria – Golf Marediroma', [
+    ['', 'Questa è un\'email di prova dei promemoria del Golf Marediroma.'],
+    ['Esempio', 'Promemoria: tee time domani alle 08:06'],
+    ['', 'Se la leggi, l\'invio funziona. Buon golf!'],
+  ]);
+  console.log('Email di prova inviata a ' + E.PROVA_A);
+  process.exit(0);
+}
 async function giaInviato(chiave) { return (await db.doc(`promemoria/${chiave}`).get()).exists; }
 async function segna(chiave, dati) { await db.doc(`promemoria/${chiave}`).set({ ...dati, inviato: ora.getTime() }); }
 function voci(d) {
