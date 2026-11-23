@@ -28,6 +28,7 @@ async function semina() {
     await setDoc(doc(db, 'gare', 'G2'), { name: 'Shotgun a coppie', date: D_SHOT, from: '09:30', to: '16:00', shotgun: true, coppie: true, chiusa: false });
     await setDoc(doc(db, 'gare', 'G3'), { name: 'Iscrizioni chiuse', date: D_GARA, from: '13:30', to: '15:00', shotgun: false, coppie: false, chiusa: true });
     await setDoc(doc(db, 'gare', 'G4'), { name: 'Già giocata', date: D_PASS, from: '09:30', to: '12:00', shotgun: false, coppie: false, chiusa: false });
+    await setDoc(doc(db, 'gare', 'G6'), { name: 'Aperta ai fuori gara', date: D_GARA, from: '13:30', to: '15:00', shotgun: false, coppie: false, chiusa: false, fuoriGara: true });
     await setDoc(doc(db, 'gare', 'G5'), { name: 'Ultimo momento', date: D_LAST, from: '09:30', to: '12:00', shotgun: false, coppie: false, chiusa: false });
     // un tee time condiviso: alice 2 giocatori, bob 1
     await setDoc(doc(db, 'teetimes', tee(D_OK, '09:30')), { at: T, n: 3, p: { alice: { n: 2, at: T }, bob: { n: 1, at: T } } });
@@ -231,6 +232,16 @@ test('iscrizioni: valide sì, malformate no, altrui no', async () => {
   await assertFails(setDoc(doc(anonimo(env, 'alice'), 'iscrizioni', 'alice'), { list: [{ ...x, email: 'x' }] }));
   await assertFails(setDoc(doc(anonimo(env, 'alice'), 'iscrizioni', 'bob'), { list: [x] }));
   await assertFails(getDoc(doc(anonimo(env, 'bob'), 'iscrizioni', 'alice')));
+});
+test('iscrizioni: «fuori gara» solo nelle gare che lo accettano, e mai nei tee time', async () => {
+  const fg = [{ first: 'Alice', last: 'Rossi' }, { first: 'Bruno', last: 'Verdi', fg: true }];
+  const x = { gara: 'G6', flight: slotK('13:30'), players: fg, email: 'alice@esempio.it', tel: '3331234567', pref: '13:30', cart: false, cartSlot: null, at: T };
+  const r = doc(anonimo(env, 'alice'), 'iscrizioni', 'alice');
+  await assertSucceeds(setDoc(r, { list: [x] }));
+  await assertFails(setDoc(r, { list: [{ ...x, gara: 'G1', flight: slotK('10:30'), pref: '10:30' }] }));
+  await assertFails(setDoc(r, { list: [{ ...x, players: [{ first: 'Alice', last: 'Rossi', fg: 'si' }] }] }));
+  await assertFails(setDoc(r, { list: [{ ...x, players: [{ first: 'Alice', last: 'Rossi', fg: false, ruolo: 1 }] }] }));
+  await assertFails(setDoc(doc(anonimo(env, 'alice'), 'contacts', 'alice'), { list: [{ slot: tee(D_OK, '10:06'), email: 'alice@esempio.it', tel: '3331234567', players: fg, at: T }] }));
 });
 test('recensioni proposte: si inviano ma le legge solo il circolo', async () => {
   const r = doc(anonimo(env, 'alice'), 'proposte', `alice_${T}`);

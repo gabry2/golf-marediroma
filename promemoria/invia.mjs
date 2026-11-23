@@ -54,7 +54,7 @@ async function invia(to, oggetto, righe) {
   if (!r.ok) throw new Error('FormSubmit ' + r.status);
 }
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const nomi = (pl) => (pl || []).map((p) => `${p.first || ''} ${p.last || ''}`.trim()).filter(Boolean).join(', ') || '—';
+const nomi = (pl) => (pl || []).map((p) => `${p.first || ''} ${p.last || ''}`.trim() + (p.fg ? ' (fuori gara)' : '')).filter((x) => x && x !== ' (fuori gara)').join(', ') || '—';
 const dLong = (ymd) => new Date(roma(ymd, '12:00')).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long', day: 'numeric', month: 'long' });
 
 // Prova: con PROVA_A=indirizzo invia solo un'email di prova e si ferma

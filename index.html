@@ -148,6 +148,15 @@ th{color:var(--muted);font-weight:500}
 .slot.sel,.slot.sel:hover:not(:disabled){background:var(--green);color:#fff;border-style:solid}
 .slot.bk-gara{background:#FBF1D9;border-color:var(--sand);color:#6B5417}
 .slot.bk-altro{background:#E3F1F3;border-color:var(--sea);color:#1D5964}
+.slot.gslot{background:#FBF1D9;border-color:var(--sand);color:#6B5417}
+.slot.gslot:hover:not(:disabled){background:#F5E3B5}
+.slot.gslot.part{background:#FDF7E8;border-style:dashed}
+.slot.gslot.mine{background:#F3DFA8;border:2px solid #9A7A2C;color:#4F3D10}
+.slot.gslot.busy,.slot.gslot.past{background:#FBF1D9;border-color:#EAD9AE;color:#B49A5E}
+.slot.gslot.sel{background:#9A7A2C;border-color:#9A7A2C;color:#fff}
+.gblock .gh{margin:.2rem 0 0;font-size:.92rem;color:#6B5417}
+.chk.fgc{margin:.35rem 0 0;font-size:.95rem}.chk.fgc small{color:#5b6b61;font-weight:400}
+.fg-i{margin:0 0 .6rem;font-size:.95rem;color:#6B5417;background:#FBF1D9;border-radius:8px;padding:.5rem .7rem}
 .book{margin-top:1.75rem;border:1.5px solid var(--green);border-radius:10px;padding:1.4rem;max-width:34rem;background:#fff}
 .book[hidden]{display:none}
 .book .row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin:1rem 0}
@@ -1331,6 +1340,8 @@ try{
 <label class="pill"><input type="radio" name="bu" value="18" checked> 18 buche</label>
 <label class="pill"><input type="radio" name="bu" value="9"> 9 buche</label>
 </fieldset>
+<label class="chk tgl" style="margin-top:1rem"><input type="checkbox" id="gFg"> Accetta fuori gara</label>
+<p class="ev-h" style="margin-top:.3rem">Se attivo, nelle partenze della gara possono iscriversi anche giocatori che non partecipano alla gara: al momento dell'iscrizione selezionano «Fuori gara».</p>
 <label style="margin-top:1rem">Note sulla gara (facoltative)<textarea id="gNote" rows="4" placeholder="Es. Formula stableford, premiazione alle 18 in club house…"></textarea></label>
 <label style="margin-top:1rem">Locandina (immagine, facoltativa)<input type="file" id="gPoster" accept="image/*"></label>
 <label style="margin-top:1rem">Regolamento (PDF, facoltativo)<input type="file" id="gRules" accept="application/pdf"></label>
@@ -1773,11 +1784,11 @@ function renderSlots(){try{renderHome()}catch(e){}
   var box=$("slots");box.innerHTML="";
   if(blocked[selDate]){selSlot=null;$("book").hidden=true;var bp=document.createElement("p");bp.className="note";bp.style.gridColumn="1/-1";bp.textContent="Tee time chiusi: "+(blocked[selDate].name||"chiusura del circolo")+". In questa data non è possibile prenotare.";box.appendChild(bp);return}
   var now=new Date(),today=iso(now)===selDate;
-  partials(selDate).forEach(function(r){var np=document.createElement("p");np.className="note"+(r.info.type==="altro"?" blu":"");np.style.gridColumn="1/-1";np.style.margin="0 0 .4rem";np.textContent="Dalle "+r.from+" alle "+r.to+": "+(r.info.type==="gara"?"gara «"+r.info.label+"»":r.info.label)+". In questa fascia non si prenota.";box.appendChild(np)});
+  partials(selDate).forEach(function(r){var np=document.createElement("p");np.className="note"+(r.info.type==="altro"?" blu":"");np.style.gridColumn="1/-1";np.style.margin="0 0 .4rem";var gq=r.info.type==="gara"?garaAt(selDate,r.from):null;np.textContent="Dalle "+r.from+" alle "+r.to+": "+(r.info.type==="gara"?"gara «"+r.info.label+"»":r.info.label)+(gq&&!gq.shotgun?". In questa fascia si gioca solo iscrivendosi alla gara.":". In questa fascia non si prenota.");box.appendChild(np)});
   var shownG={};
   timesFor(selDate).forEach(function(t){
     var gg=garaAt(selDate,t);
-    if(gg){if(!shownG[gg.id]){shownG[gg.id]=1;box.appendChild(gBlock(gg))}return}
+    if(gg){if(!shownG[gg.id]){shownG[gg.id]=1;box.appendChild(gBlock(gg))}if(!gg.shotgun)box.appendChild(gSlotBtn(gg,t,today&&(pad(now.getHours())+":"+pad(now.getMinutes()))>t));return}
     var id=selDate+"_"+t.replace(":",""),btn=document.createElement("button"),si=slotInfo(id),fr=4-si.n,mineP=!!uid&&si.parts.some(function(q){return q.by===uid});
     btn.type="button";btn.className="slot";btn.innerHTML=t;
     var past=today&&(pad(now.getHours())+":"+pad(now.getMinutes()))>t;
@@ -1799,6 +1810,23 @@ function renderSlots(){try{renderHome()}catch(e){}
     box.appendChild(btn);
   });
 }
+/* Un orario di partenza di una gara a orari, nella griglia dei tee time: colore oro come le gare nel calendario */
+function gSlotBtn(g,t,past){
+  var b=document.createElement("button"),si=gSlot(g,t),sk=slotK(t),sm=function(x){b.innerHTML=t+"<small>"+x+"</small>"};
+  b.type="button";b.className="slot gslot";
+  var mine=!!uid&&myIscr.some(function(x){return x.gara===g.id&&(x.flight===sk||x.pref===t)});
+  if(past){b.classList.add("past");b.disabled=true;sm("Gara · passato");return b}
+  if(mine){b.classList.add("mine");sm("Gara · Tuo");b.title="Sei iscritto alla gara «"+g.name+"» alle "+t+". Per annullare usa il riquadro della gara qui sopra.";
+    b.onclick=function(){if(si.free&&!g.chiusa)openIscr(g,t);else{var gb=b.parentNode&&b.parentNode.querySelector(".gblock");if(gb)gb.scrollIntoView({behavior:"smooth",block:"center"})}};return b}
+  if(g.chiusa){b.classList.add("past");b.disabled=true;sm("Gara · chiusa");b.title="Le iscrizioni alla gara «"+g.name+"» sono chiuse.";return b}
+  if(!si.free){b.classList.add("busy");b.disabled=true;sm("Completo");b.title="Partenza delle "+t+" della gara «"+g.name+"» al completo.";return b}
+  var lm=lastMin(g)&&!si.used;
+  if(si.used)b.classList.add("part");
+  sm("Gara · "+(lm?"min "+minNew(g):si.used?si.free+(si.free===1?" libero":" liberi"):"Libero"));
+  b.title="Gara «"+g.name+"», partenza delle "+t+": "+(si.used?si.used+(si.used===1?" giocatore iscritto, ":" giocatori iscritti, ")+postiTxt(si.free)+".":"partenza libera.")+(lm?" "+lastTxtS(g):"")+" Tocca per iscriverti.";
+  b.setAttribute("aria-label",b.title);
+  b.onclick=function(){openIscr(g,t)};if(!db)b.disabled=true;
+  return b}
 function longDate(){var d=days.filter(function(x){return iso(x)===selDate})[0];return FULL[d.getDay()]+" "+d.getDate()+" "+MN[d.getMonth()]}
 function postiTxt(n){return n===1?"1 posto libero":n+" posti liberi"}
 function partsOf(b){if(!b)return [];if(b.p&&typeof b.p==="object"&&!Array.isArray(b.p))return Object.keys(b.p).map(function(k){var v=b.p[k]||{};return {by:k,n:+v.n||0,at:+v.at||0}});if(Array.isArray(b.parts))return b.parts;return [{by:b.by||"",n:+b.n||(Array.isArray(b.players)?b.players.length:4),at:b.at||0}]}
@@ -2165,17 +2193,17 @@ function xlStart(g){
   S.flights.forEach(function(f,i){f.units.forEach(function(u){u.ps.forEach(function(p,j){
     var nm=tCase(((p.first||"")+" "+(p.last||"")).trim()),pid=pidByKey(pKey(nm)),h=pid&&GIOC[pid]&&GIOC[pid].hcp!=null?fmtH(GIOC[pid].hcp):"",x=u.x,note=[];
     if(u.from&&u.from!==f.t)note.push("aveva scelto le "+u.from);if(!u.from)note.push("senza orario");if(u.ps.length===1&&f.units.length>1)note.push("iscritto da solo, unito al flight");
-    rows.push([f.t||"da assegnare",i+1,nm,h,u.ps.length>1?u.ps.filter(function(q,k){return k!==j}).map(function(q){return tCase(((q.first||"")+" "+(q.last||"")).trim())}).join(", "):"",j===0?(x.email||""):"",j===0?(x.tel||""):"",hasCart(g,x)&&j===0?"Sì":"",j===0?note.join("; "):""]);band.push(i%2)})})});
+    rows.push([f.t||"da assegnare",i+1,nm,h,p.fg?"Sì":"",u.ps.length>1?u.ps.filter(function(q,k){return k!==j}).map(function(q){return tCase(((q.first||"")+" "+(q.last||"")).trim())}).join(", "):"",j===0?(x.email||""):"",j===0?(x.tel||""):"",hasCart(g,x)&&j===0?"Sì":"",j===0?note.join("; "):""]);band.push(i%2)})})});
   return dlXlsx("partenze-"+g.name+"-"+g.date+".xlsx",g.name+" – "+fmtD(g.date)+" – partenze",
     (S.after?"Dopo le 12 del giorno prima: i flight sono stati compattati dai primi orari, senza buchi. ":"Prima delle 12 del giorno prima: ognuno resta al suo orario, i giocatori soli sono uniti e messi nei primi orari liberi. ")+"Scaricato il "+new Date().toLocaleString("it-IT")+". Puoi modificarlo e ricaricarlo nella pagina Flight e statistiche.",
-    ["Partenza","Flight","Giocatore","HCP","Iscritto insieme a","Email","Telefono","Cart","Note"],rows,[12,8,28,8,32,30,18,8,34],function(i){return band[i]})}
+    ["Partenza","Flight","Giocatore","HCP","Fuori gara","Iscritto insieme a","Email","Telefono","Cart","Note"],rows,[12,8,28,8,11,32,30,18,8,34],function(i){return band[i]})}
 function xlIscritti(g){if(!g.shotgun)return xlStart(g);
   var ins=(allIscr[g.id]||[]).slice().sort(function(x,y){return ((x.flight||99)-(y.flight||99))||((x.at||0)-(y.at||0))}),rows=[],n=0,band=[];
   ins.forEach(function(x,i){var ps=x.players||[{first:x.first,last:x.last}];ps.forEach(function(p,j){n++;
     var nm=((p.first||"")+" "+(p.last||"")).trim(),pid=pidByKey(pKey(tCase(nm))),h=pid&&GIOC[pid]&&GIOC[pid].hcp!=null?fmtH(GIOC[pid].hcp):"";
-    rows.push([n,tCase(nm),h,x.flight?(g.coppie?"Coppia ":"Flight ")+x.flight:"",ps.length>1?ps.filter(function(q,k){return k!==j}).map(function(q){return tCase(((q.first||"")+" "+(q.last||"")).trim())}).join(", "):"",j===0?(x.email||""):"",j===0?(x.tel||""):"",x.pref||"",hasCart(g,x)&&j===0?"Sì":"",x.at>1e11?new Date(x.at).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):""]);band.push(i%2)})});
+    rows.push([n,tCase(nm),h,p.fg?"Sì":"",x.flight?(g.coppie?"Coppia ":"Flight ")+x.flight:"",ps.length>1?ps.filter(function(q,k){return k!==j}).map(function(q){return tCase(((q.first||"")+" "+(q.last||"")).trim())}).join(", "):"",j===0?(x.email||""):"",j===0?(x.tel||""):"",x.pref||"",hasCart(g,x)&&j===0?"Sì":"",x.at>1e11?new Date(x.at).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):""]);band.push(i%2)})});
   return dlXlsx("iscritti-"+g.name+"-"+g.date+".xlsx",g.name+" – "+fmtD(g.date)+" – iscritti","Elenco scaricato il "+new Date().toLocaleString("it-IT")+". Email e telefono sono quelli di chi ha fatto l'iscrizione.",
-    ["N.","Giocatore","HCP",g.coppie?"Coppia":"Flight","Iscritto insieme a","Email","Telefono","Preferenza orario","Cart","Iscritto il"],rows,[6,28,8,12,34,30,18,16,8,18],function(i){return band[i]})}
+    ["N.","Giocatore","HCP","Fuori gara",g.coppie?"Coppia":"Flight","Iscritto insieme a","Email","Telefono","Preferenza orario","Cart","Iscritto il"],rows,[6,28,8,11,12,34,30,18,16,8,18],function(i){return band[i]})}
 function xlGioc(){var H=histStats(null),ids=Object.keys(GIOC).sort(function(a,b){return gName(a)<gName(b)?-1:1});
   return dlXlsx("giocatori-golf-marediroma.xlsx","Giocatori del Golf Marediroma","Elenco dai flight salvati, scaricato il "+new Date().toLocaleString("it-IT")+".",["Giocatore","HCP","HCP aggiornato al","Gare giocate"],
     ids.map(function(id){var g=GIOC[id];return [gName(id),g.hcp==null?"":fmtH(g.hcp),g.hcpAt?fmtD(g.hcpAt):"",H.per[id]?Object.keys(H.per[id].gare).length:0]}),[30,10,20,14])}
@@ -2437,7 +2465,7 @@ function gareList(){return Object.keys(gare).map(function(k){var g=gare[k],o={id
 function garaOn(d){return gareList().filter(function(g){return g.date===d})}
 function garaAt(d,t){var l=garaOn(d);for(var i=0;i<l.length;i++)if(t>=l[i].from&&t<=l[i].to)return l[i];return null}
 function gMeta(g){return g.shotgun?"Shotgun alle "+g.from:"Partenze dalle "+g.from+" alle "+g.to}
-function gTags(g){var t=[];if(g.buche)t.push(g.buche+" buche");if(g.shotgun)t.push("Shotgun");if(g.coppie)t.push("A coppie");if(g.formula==="altro")t.push(g.formulaAltro||"Altra formula");return t}
+function gTags(g){var t=[];if(g.buche)t.push(g.buche+" buche");if(g.shotgun)t.push("Shotgun");if(g.coppie)t.push("A coppie");if(g.formula==="altro")t.push(g.formulaAltro||"Altra formula");if(g.fuoriGara)t.push("Anche fuori gara");return t}
 function gPatch(id,patch){var g=gare[id]||{},o={};for(var k in g)o[k]=g[k];for(var p in patch)o[p]=patch[p];o.upd=Date.now();return db.collection("gare").doc(id).set(o).then(function(){gare[id]=o;try{renderGList();renderGare();fillFlGara()}catch(e){}})}
 function lastMin(g){if(!g||!g.date)return false;var q=g.date.split("-");return Date.now()>=new Date(+q[0],+q[1]-1,+q[2]-1,12,0,0).getTime()}
 function minNew(g){return g&&g.coppie?4:3}
@@ -2446,7 +2474,9 @@ function cartFree(g){return Math.max(0,CARTS-(carts[g.id]||0))}
 function cartTxt(g){var f=cartFree(g),o=openFl(g).length;return (f?"Cart disponibili: "+f+" su "+CARTS:"Cart esauriti")+(o?" · "+o+(g.coppie?(o===1?" coppia":" coppie"):(o===1?" flight":" flight"))+" con posti liberi":"")}
 function toast(t){var x=$("toast");x.textContent=t;x.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){x.hidden=true},5000)}
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
-function entryNames(x){return x.players?x.players.map(function(q){return q.first+" "+q.last}).join(", "):(x.first+" "+x.last)}
+function entryNames(x){return x.players?x.players.map(nmFg).join(", "):(x.first+" "+x.last)}
+function nmFg(p){return nmOf(p)+(p&&p.fg?" (fuori gara)":"")}
+function fgCount(ins){return (ins||[]).reduce(function(t,x){return t+(x.players||[]).filter(function(p){return p&&p.fg}).length},0)}
 function capOf(g){return g&&g.coppie?2:4}
 function flightsOf(g){return (gfl[g.id]||[]).slice().sort(function(a,b){return a.k-b.k})}
 function flightOf(g,k){return flightsOf(g).filter(function(f){return f.k===k})[0]||null}
@@ -2482,8 +2512,10 @@ function mineFor(g,box){myIscr.filter(function(x){return x.gara===g.id}).forEach
 function gBlock(g){
   var e=el("div","gblock"),l=el("div");l.appendChild(el("h3",null,"Gara «"+g.name+"»"));
   if(gTags(g).length)l.appendChild(tagsEl(g));
-  l.appendChild(el("p","gm",gMeta(g)));l.appendChild(el("p","cartl",cartTxt(g)));mineFor(g,l);e.appendChild(l);
-  var b=el("button","btn gold","Iscriviti alla gara");b.type="button";b.onclick=function(){openIscr(g)};if(!db)b.disabled=true;e.appendChild(b);
+  l.appendChild(el("p","gm",gMeta(g)));l.appendChild(el("p","cartl",cartTxt(g)));
+  if(!g.shotgun&&!g.chiusa)l.appendChild(el("p","gh","Gli orari in oro qui sotto sono le partenze della gara: tocca un orario per iscriverti a quella partenza."+(g.fuoriGara?" Si può giocare anche fuori gara.":"")));
+  mineFor(g,l);e.appendChild(l);
+  var b=el("button","btn gold",g.chiusa?"Iscrizioni chiuse":"Iscriviti alla gara");if(g.chiusa)b.disabled=true;b.type="button";b.onclick=function(){openIscr(g)};if(!db)b.disabled=true;e.appendChild(b);
   return e;
 }
 function renderGare(){try{renderHG()}catch(e){}try{renderHome()}catch(e){}
@@ -2568,10 +2600,11 @@ function gsOpen(v){var c=$("gsCal"),b=$("gsCalB");if(!c)return;c.hidden=!v;b.set
 /* dialogo iscrizione */
 var curG=null;
 function buildINames(n){
-  var old={},h="";$("iNames").querySelectorAll("input").forEach(function(x){old[x.id]=x.value});
-  for(var k=1;k<=n;k++){var opt=curG&&curG.shotgun&&curG.coppie&&k===2&&!selFl().k&&!lastMin(curG),rq=opt?' <span class="opt">(facoltativo)</span>':' <span class="req">*</span>';h+='<div class="pl"><p class="pl-h">Giocatore '+k+(k===1?' (chi si iscrive)':'')+(opt?' <span class="opt">(facoltativo)</span>':'')+'</p><div class="row"><label>Nome<input id="iFn'+k+'" autocomplete="'+(k===1?'given-name':'off')+'" autocapitalize="words"></label><label>Cognome<input id="iLn'+k+'" autocomplete="'+(k===1?'family-name':'off')+'" autocapitalize="words"></label></div></div>'}
+  var old={},h="",fg=!!(curG&&curG.fuoriGara);$("iNames").querySelectorAll("input").forEach(function(x){old[x.id]=x.type==="checkbox"?x.checked:x.value});
+  if(fg&&n)h+='<p class="fg-i">Questa gara accetta anche giocatori fuori gara: selezioni «Fuori gara» per chi gioca nella partenza senza partecipare alla gara.</p>';
+  for(var k=1;k<=n;k++){var opt=curG&&curG.shotgun&&curG.coppie&&k===2&&!selFl().k&&!lastMin(curG),rq=opt?' <span class="opt">(facoltativo)</span>':' <span class="req">*</span>';h+='<div class="pl"><p class="pl-h">Giocatore '+k+(k===1?' (chi si iscrive)':'')+(opt?' <span class="opt">(facoltativo)</span>':'')+'</p><div class="row"><label>Nome<input id="iFn'+k+'" autocomplete="'+(k===1?'given-name':'off')+'" autocapitalize="words"></label><label>Cognome<input id="iLn'+k+'" autocomplete="'+(k===1?'family-name':'off')+'" autocapitalize="words"></label></div>'+(fg?'<label class="chk fgc"><input type="checkbox" id="iFg'+k+'"> Fuori gara <small>(gioca senza partecipare alla gara)</small></label>':'')+'</div>'}
   $("iNamesS").hidden=!n;
-  $("iNames").innerHTML=h;Object.keys(old).forEach(function(k){if($(k))$(k).value=old[k]});
+  $("iNames").innerHTML=h;Object.keys(old).forEach(function(k){var x=$(k);if(!x)return;if(x.type==="checkbox")x.checked=!!old[k];else x.value=old[k]});
 }
 $("iNum").onchange=function(){buildINames(+$("iNum").value||0);if(curG&&!curG.shotgun)fillTimes();numSeg()};
 function numSeg(){var s=$("iNum"),w=$("iNumSeg");if(!w)return;w.innerHTML="";[].forEach.call(s.options,function(o){if(!o.value)return;var b=document.createElement("button");b.type="button";b.innerHTML=o.value+'<small>'+(o.value==="1"?"giocatore":"giocatori")+'</small>';b.setAttribute("aria-pressed",s.value===o.value?"true":"false");b.onclick=function(){s.value=o.value;s.onchange();var nx=curG&&!curG.shotgun?$("iTimeWrap"):$("iNamesS");if(nx&&window.innerWidth<641)setTimeout(function(){nx.scrollIntoView({behavior:"smooth",block:"start"})},60)};w.appendChild(b)});idNum()}
@@ -2593,12 +2626,16 @@ function fillTimes(){
   s.add(new Option("Scegli l'orario…",""));
   var g1=document.createElement("optgroup");g1.label="Consigliati";o.rec.forEach(function(x){g1.appendChild(new Option(slotLbl(x,n),x.legacy?"k:"+x.k:x.t))});s.appendChild(g1);
   var rest=o.all.filter(function(x){return o.rec.indexOf(x)<0});if(rest.length){var g2=document.createElement("optgroup");g2.label="Altri orari";rest.forEach(function(x){g2.appendChild(new Option(slotLbl(x,n),x.legacy?"k:"+x.k:x.t))});s.appendChild(g2)}
+  if(!v&&iPreT)v=iPreT;
+  var preNo=iPreT&&v===iPreT&&!o.all.some(function(x){return !x.legacy&&x.t===iPreT});
   if(v&&o.all.some(function(x){return (x.legacy?"k:"+x.k:x.t)===v}))s.value=v;
   timeChips(o,n);
-  h.textContent=(lastMin(g)?lastTxtS(g)+" ":"")+"In giallo le partenze consigliate: prima quelle dove mancano giocatori, poi i primi orari liberi."}
-function openIscr(g){
+  h.textContent=(preNo?"Alle "+iPreT+" non c'è posto per "+(n===1?"1 giocatore":n+" giocatori")+(lastMin(g)&&!gSlot(g,iPreT).used&&n<minNew(g)?" (una nuova partenza ora serve almeno "+minNew(g)+" giocatori)":"")+": scegli un altro orario. ":"")+(lastMin(g)?lastTxtS(g)+" ":"")+"In giallo le partenze consigliate: prima quelle dove mancano giocatori, poi i primi orari liberi."}
+var iPreT="";
+function openIscr(g,t){
   if(g.chiusa){toast("Le iscrizioni alla gara «"+g.name+"» sono chiuse.");return}
-  curG=g;$("iTitle").textContent="Iscrizione alla gara «"+g.name+"»";$("iSub").textContent=fmtD(g.date)+", "+gMeta(g).toLowerCase()+(g.coppie?", gara a coppie":"");
+  iPreT=!g.shotgun&&t&&gTimes(g).indexOf(t)>=0?t:"";
+  curG=g;$("iTitle").textContent="Iscrizione alla gara «"+g.name+"»";$("iSub").textContent=fmtD(g.date)+", "+gMeta(g).toLowerCase()+(g.coppie?", gara a coppie":"")+(iPreT?". Partenza scelta: "+iPreT:"")+(g.fuoriGara?". Si può giocare anche fuori gara":"");
   $("iNames").innerHTML="";
   $("iNum").value="";
   var ps=$("iPref");ps.innerHTML="";ps.add(new Option("Nessuna preferenza",""));timesFor(g.date).filter(function(t){return t>=g.from&&t<=g.to}).forEach(function(t){ps.add(new Option(t,t))});
@@ -2627,7 +2664,7 @@ function onFlight(){
   $("iPrefWrap").hidden=!!g.shotgun||!isNew;
   numSeg();
 }
-function closeIscr(){$("iDlg").hidden=true;curG=null;document.body.style.overflow=""}
+function closeIscr(){$("iDlg").hidden=true;curG=null;iPreT="";document.body.style.overflow=""}
 $("iX").onclick=function(){closeIscr()};
 $("iCancel").onclick=closeIscr;
 document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("#iDlg .pv-n a"))closeIscr()});
@@ -2683,6 +2720,8 @@ async function joinGara(g,pl,em,pref,wantCart,flightK,tel){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em))throw new Error("Serve un'email valida del giocatore 1.");
   if(!telOk(tel))throw new Error("Serve un numero di telefono valido del giocatore 1.");tel=String(tel).trim();
   if(!nmOk(pl))throw new Error("Nome e cognome possono avere al massimo 60 caratteri.");
+  pl=pl.map(function(p){var o={first:p.first,last:p.last};if(p.fg)o.fg=true;return o});
+  if(!g.fuoriGara&&pl.some(function(p){return p.fg}))throw new Error("Questa gara non accetta giocatori fuori gara.");
   if(!g.shotgun&&flightK){var lf=flightOf(g,flightK);if(!lf||lf.cap-lf.n<pl.length)throw new Error(lf?(lf.cap-lf.n?"In questo "+(g.coppie?"posto":"flight")+" "+(lf.cap-lf.n===1?"resta 1 posto libero.":"restano "+(lf.cap-lf.n)+" posti liberi."):"Questo flight si è appena completato."):"Questo flight non esiste più: scegline un altro.")}
   else if(!g.shotgun){var ts0=gTimes(g);if(!pref||ts0.indexOf(pref)<0)throw new Error("Scegli l'orario di partenza tra le "+g.from+" e le "+g.to+".");
     if(g.coppie&&pl.length===3)throw new Error("Nelle gare a coppie si iscrivono 1, 2 o 4 giocatori.");
@@ -2702,7 +2741,7 @@ async function joinGara(g,pl,em,pref,wantCart,flightK,tel){
   catch(e){if(slot){try{await db.collection("cart").doc(g.id+"_"+slot).delete()}catch(e2){}}for(var q4=0;q4<fls.length;q4++)await releaseFlight(g.id,fls[q4].k,grp[q4].length);throw new Error("Non è stato possibile registrare l'iscrizione. Riprova.")}
   mailConf(em,"Conferma iscrizione – «"+g.name+"» "+dLabel(g.date)+" – Golf Marediroma",{
     "Conferma":"L'iscrizione alla gara è registrata.","Gara":g.name,"Giorno":dLong(g.date),"Orari":gMeta(g),"Flight":fls.map(function(f){return flLbl(g,f.k)}).join(" e ").replace(/^./,function(c){return c.toUpperCase()})+(g.coppie?" (gara a coppie)":""),
-    "Giocatori":pl.map(nmOf).join(", "),"Orario di partenza":fl.pref||(g.shotgun?"Shotgun alle "+g.from:"—"),"Cart":slot?"Sì, prenotato":"No","Email giocatore 1":em,"Telefono giocatore 1":tel,
+    "Giocatori":pl.map(nmFg).join(", "),"Orario di partenza":fl.pref||(g.shotgun?"Shotgun alle "+g.from:"—"),"Cart":slot?"Sì, prenotato":"No","Email giocatore 1":em,"Telefono giocatore 1":tel,
     "Nota":"Il flight non è vincolante: il gruppo può essere variato in base all'HCP e ad altri dati.",
     "Per annullare":"Dalla pagina Gare del sito, chiedendo a Remo nella chat, oppure chiamando la segreteria al +39 06 913 3250."});
   return {slot:slot,free:fl.free,k:fls[0].k,ks:fls.map(function(f){return f.k})};
@@ -2712,7 +2751,7 @@ $("iGo").onclick=async function(){
   var fs=g.shotgun?selFl():{k:0},n=!g.shotgun?+$("iNum").value:g.coppie?(fs.k?1:(lastMin(g)?4:2)):+$("iNum").value;
   if(!g.shotgun&&n&&!$("iTime").value){err("Scegli l'orario di partenza.");$("iTime").focus();return}if(!n){err("Scegli il numero di giocatori.");return}
   var pl=[];for(var k=1;k<=n;k++){var a=$("iFn"+k).value.trim(),c=$("iLn"+k).value.trim(),opt=g.coppie&&k===2&&!fs.k;
-    if(opt&&!a&&!c)continue;if(!a||!c){err(opt?"Completa nome e cognome del giocatore 2, oppure lascia vuoti entrambi.":"Inserisci nome e cognome di tutti i giocatori.");return}pl.push({first:a,last:c})}
+    if(opt&&!a&&!c)continue;if(!a||!c){err(opt?"Completa nome e cognome del giocatore 2, oppure lascia vuoti entrambi.":"Inserisci nome e cognome di tutti i giocatori.");return}var pp={first:a,last:c};if(g.fuoriGara&&$("iFg"+k)&&$("iFg"+k).checked)pp.fg=true;pl.push(pp)}
   var em=$("iEm").value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){err("Inserisci un'email valida per la conferma.");return}
   var tel=$("iTel").value.trim();if(!telOk(tel)){err("Inserisci un numero di telefono valido del giocatore 1.");$("iTel").focus();return}
   $("iGo").disabled=true;
@@ -2741,7 +2780,7 @@ async function cancelIscr(x){
 var editId=null;
 function radio(name,val){document.querySelectorAll('input[name="'+name+'"]').forEach(function(r){r.checked=r.value===val})}
 function resetGaraForm(){
-  editId=null;["sbName","sbCirc","gNote","gFmAlt"].forEach(function(i){$(i).value=""});$("gPoster").value="";$("gRules").value="";radio("sg","no");radio("cp","no");radio("bu","18");$("gFmAltL").hidden=true;
+  editId=null;["sbName","sbCirc","gNote","gFmAlt"].forEach(function(i){$(i).value=""});$("gPoster").value="";$("gRules").value="";radio("sg","no");radio("cp","no");radio("bu","18");$("gFmAltL").hidden=true;$("gFg").checked=false;
   $("gCur").hidden=true;$("sbCancelEdit").hidden=true;
   $("sbBtn").textContent=document.querySelector('input[name="kind"]:checked').value==="altro"?"Blocca orari":"Pubblica gara";
 }
@@ -2750,7 +2789,7 @@ document.querySelectorAll('input[name="cp"]').forEach(function(r){r.addEventList
 function fillGaraForm(g){
   editId=g.id;radio("kind","gara");$("kAltro").hidden=true;$("kGara").hidden=false;
   $("sbDate").value=g.date;$("sbFrom").value=g.from;$("sbTo").value=g.to;$("sbName").value=g.name;$("sbCirc").value=g.circuito||"";$("gNote").value=g.note||"";
-  radio("sg",g.shotgun?"si":"no");radio("cp",g.formula==="altro"?"altro":g.coppie?"si":"no");$("gFmAlt").value=g.formulaAltro||"";$("gFmAltL").hidden=g.formula!=="altro";radio("bu",String(g.buche||18));$("gPoster").value="";$("gRules").value="";
+  radio("sg",g.shotgun?"si":"no");radio("cp",g.formula==="altro"?"altro":g.coppie?"si":"no");$("gFmAlt").value=g.formulaAltro||"";$("gFmAltL").hidden=g.formula!=="altro";radio("bu",String(g.buche||18));$("gFg").checked=!!g.fuoriGara;$("gPoster").value="";$("gRules").value="";
   $("gPosterDel").checked=false;$("gRulesDel").checked=false;
   $("gCurP").hidden=!g.poster;$("gCurR").hidden=!g.rules;if(g.poster)setHref($("gCurPa"),g.poster);if(g.rules)setHref($("gCurRa"),g.rules);
   $("gCur").hidden=false;$("sbBtn").textContent="Salva modifiche";$("sbCancelEdit").hidden=false;
@@ -2771,7 +2810,7 @@ async function saveGara(d,a,z){
     if(fP){var u1=await as.upload(fP);if(poster)toDel.push(poster);poster=u1.id}else if(old&&poster&&$("gPosterDel").checked){toDel.push(poster);poster=null}
     if(fR){var u2=await as.upload(fR);if(rules)toDel.push(rules);rules=u2.id}else if(old&&rules&&$("gRulesDel").checked){toDel.push(rules);rules=null}
     var ref=editId?db.collection("gare").doc(editId):db.collection("gare").doc();
-    await ref.set({name:gn,circuito:$("sbCirc").value.trim().slice(0,60),date:d,from:a,to:z,shotgun:sg,coppie:cp,formula:cp?"coppie":cpv==="altro"?"altro":"singolo",formulaAltro:cpv==="altro"?fa.slice(0,60):"",buche:bu,chiusa:!!(old&&old.chiusa),partenze:(old&&old.partenze)||null,note:$("gNote").value.trim(),poster:poster,rules:rules,by:(old&&old.by)||uid||"",at:(old&&old.at)||Date.now(),upd:Date.now()});
+    await ref.set({name:gn,circuito:$("sbCirc").value.trim().slice(0,60),date:d,from:a,to:z,shotgun:sg,coppie:cp,formula:cp?"coppie":cpv==="altro"?"altro":"singolo",formulaAltro:cpv==="altro"?fa.slice(0,60):"",buche:bu,fuoriGara:$("gFg").checked,chiusa:!!(old&&old.chiusa),partenze:(old&&old.partenze)||null,note:$("gNote").value.trim(),poster:poster,rules:rules,by:(old&&old.by)||uid||"",at:(old&&old.at)||Date.now(),upd:Date.now()});
     if(toDel.length){try{as=as||await window.claude.use("assets");if(as)for(var k=0;k<toDel.length;k++)await as.delete(toDel[k])}catch(e2){}}
     admMsg((old?"Gara «"+gn+"» aggiornata.":"Gara «"+gn+"» pubblicata per "+fmtD(d)+"."));resetGaraForm();
   }catch(e){admMsg(e&&e.code==="no_assets"?"Il tuo account non può caricare file.":e&&e.code==="too_large"?"File troppo grande: il massimo è 8 MB.":"Non è stato possibile salvare la gara. Riprova.",1)}
@@ -2786,7 +2825,7 @@ function renderGList(){
   ls.forEach(function(g){
     var ins=allIscr[g.id]||[],np=ins.reduce(function(t,x){return t+(x.players?x.players.length:1)},0),r=tb.insertRow();r.insertCell().textContent=fmtD(g.date);
     var c=r.insertCell();c.appendChild(document.createTextNode(g.name+", "+gMeta(g).toLowerCase()));if(gTags(g).length)c.appendChild(tagsEl(g));
-    var nf=flightsOf(g).length;r.insertCell().textContent=ins.length+(ins.length===1?" iscrizione, ":" iscrizioni, ")+np+(np===1?" giocatore, ":" giocatori, ")+nf+(g.coppie?(nf===1?" coppia, ":" coppie, "):" flight, ")+(carts[g.id]||0)+"/"+CARTS+" cart";
+    var nf=flightsOf(g).length;var nfg=fgCount(ins);r.insertCell().textContent=ins.length+(ins.length===1?" iscrizione, ":" iscrizioni, ")+np+(np===1?" giocatore, ":" giocatori, ")+(nfg?"di cui "+nfg+" fuori gara, ":"")+nf+(g.coppie?(nf===1?" coppia, ":" coppie, "):" flight, ")+(carts[g.id]||0)+"/"+CARTS+" cart";
     var st=el("div","g-st");st.appendChild(el("span","tag "+(g.chiusa?"tag-c":"tag-o"),g.chiusa?"Iscrizioni chiuse":"Iscrizioni aperte"));if(g.partenze&&g.partenze.at)st.appendChild(el("span","tag tag-f","Flight confermati"));r.cells[2].appendChild(st);
     var c3=r.insertCell(),be=el("button","btn alt sm","Modifica"),bi=el("button","btn alt sm","Iscritti"),bd=el("button","btn alt sm","Elimina"),bc=el("button","btn alt sm",g.chiusa?"Riapri iscrizioni":"Chiudi iscrizioni"),bf=el("button","btn sm","Flight"),bx=el("button","btn alt sm","Excel iscritti");bx.type="button";bx.onclick=function(){xlIscritti(g).catch(function(){admMsg("Non riesco a preparare il file Excel: controlla la connessione e riprova.",1)})};
     be.type=bi.type=bd.type=bc.type=bf.type="button";be.onclick=function(){fillGaraForm(g)};
@@ -3055,7 +3094,7 @@ function updateMeteo(){
     if(metState===2)$("mTxt").textContent="Le previsioni dettagliate per questo giorno non sono ancora pronte: c'è la tendenza di 3B Meteo.";
   }
 }
-function gareTxt(){var l=gareList().filter(function(g){return g.date>=iso(days[0])});return l.length?l.map(function(g){return "[id "+g.id+"] "+fmtD(g.date)+": «"+g.name+"», "+gMeta(g).toLowerCase()+(g.coppie?", gara a coppie (2 giocatori, il secondo facoltativo)":", da 1 a 4 giocatori per iscrizione")+", "+cartTxt(g).toLowerCase()+(openFl(g).length?", flight con posti: "+openFl(g).map(function(f){return f.k+" ("+postiTxt(f.cap-f.n)+(f.pref?", pref. "+f.pref:"")+")"}).join("; "):"")+(g.note?". Note: "+g.note.replace(/\s+/g," "):"")}).join("\n"):"Nessuna gara in programma."}
+function gareTxt(){var l=gareList().filter(function(g){return g.date>=iso(days[0])});return l.length?l.map(function(g){return "[id "+g.id+"] "+fmtD(g.date)+": «"+g.name+"», "+gMeta(g).toLowerCase()+(g.coppie?", gara a coppie (2 giocatori, il secondo facoltativo)":", da 1 a 4 giocatori per iscrizione")+", "+cartTxt(g).toLowerCase()+(g.fuoriGara?", accetta anche giocatori fuori gara (giocano nella partenza senza partecipare alla gara: chiedi chi è fuori gara)":"")+(openFl(g).length?", flight con posti: "+openFl(g).map(function(f){return f.k+" ("+postiTxt(f.cap-f.n)+(f.pref?", pref. "+f.pref:"")+")"}).join("; "):"")+(g.note?". Note: "+g.note.replace(/\s+/g," "):"")}).join("\n"):"Nessuna gara in programma."}
 /* ---- Assistente ---- */
 function baseTxt(){return String(BASE).split("{ORARI}").join(orariTxt())}
 var BASE=["Il circolo si trova in Via Enna, 30 – 00040 Ardea (RM). Telefono +39 06 913 3250, WhatsApp +39 328 555 2462, email segreteriasportiva@golfmarediroma.com.",
@@ -3085,6 +3124,7 @@ function ctx(canBook){
   (canBook?"\n\nPUOI PRENOTARE con gli strumenti. Tee time: servono data, orario, nome e cognome di ogni giocatore (da 1 a 4) ed email del giocatore 1. Gara: servono nome e cognome dei giocatori (fino a 4; nelle gare a coppie massimo 2 e il secondo è facoltativo) ed email del giocatore 1; si può creare un nuovo flight o unirsi a un flight con posti liberi (i giocatori non possono superare i posti liberi); facoltativi preferenza di orario (solo per un nuovo flight, non nelle shotgun) e cart (3 per gara). Chiedi in un solo messaggio tutti i dati mancanti. Usa 'disponibilita' per controllare l'orario. Prima di prenotare scrivi un riepilogo di una riga e chiedi conferma; prenota solo dopo un sì esplicito. Dopo la prenotazione conferma in una frase e indica gli eventuali posti liberi nel flight. Se un orario non va bene proponi i 2 più vicini disponibili.":"\n\nNon puoi prenotare tu: indica la pagina «Prenota tee time» o «Gare».")+
   "\n\nOggi è "+FULL[n.getDay()]+" "+iso(n)+".\n\nINFORMAZIONI DEL CIRCOLO\n"+(info.trim()||"(nessuna informazione aggiuntiva)")+"\n\nGARE IN PROGRAMMA\n"+gareTxt()+"\n\nCOME FUNZIONA\n"+baseTxt()+"\n\nDISPONIBILITÀ NEI PROSSIMI 14 GIORNI\n"+liveData();
 }
+function normPlG(a){var o=normPl(a);(Array.isArray(a)?a:[]).filter(function(x){x=x||{};return String(x.nome||x.first||"").trim()&&String(x.cognome||x.last||"").trim()}).forEach(function(x,i){if(o[i]&&x.fuori_gara===true)o[i].fg=true});return o}
 function normPl(a){return (Array.isArray(a)?a:[]).map(function(x){x=x||{};return {first:String(x.nome||x.first||"").trim(),last:String(x.cognome||x.last||"").trim()}}).filter(function(x){return x.first&&x.last})}
 function dayAvail(d){
   if(days.map(iso).indexOf(d)<0)return "Si prenota solo nei prossimi 14 giorni ("+iso(days[0])+" – "+iso(days[13])+").";
@@ -3096,6 +3136,7 @@ function dayAvail(d){
 }
 function chatTools(){
   var pl={type:"array",items:{type:"object",properties:{nome:{type:"string"},cognome:{type:"string"}},required:["nome","cognome"]},minItems:1,maxItems:4};
+  var plG={type:"array",items:{type:"object",properties:{nome:{type:"string"},cognome:{type:"string"},fuori_gara:{type:"boolean",description:"true se il giocatore gioca fuori gara (solo nelle gare che lo accettano)"}},required:["nome","cognome"]},minItems:1,maxItems:4};
   return [
     {name:"disponibilita",description:"Orari di tee time di una data (AAAA-MM-GG) con i posti liberi tra parentesi, e le gare del giorno. Usala prima di proporre o prenotare un orario.",
      inputSchema:{type:"object",properties:{data:{type:"string",description:"AAAA-MM-GG"}},required:["data"]},execute:function(i){return dayAvail(String(i.data||""))}},
@@ -3103,9 +3144,9 @@ function chatTools(){
      inputSchema:{type:"object",properties:{data:{type:"string",description:"AAAA-MM-GG"},ora:{type:"string",description:"HH:MM, uno degli orari dei tee time di quel giorno"},giocatori:pl,email:{type:"string",description:"email del giocatore 1"},telefono:{type:"string",description:"numero di telefono del giocatore 1 (obbligatorio)"}},required:["data","ora","giocatori","email","telefono"]},
      execute:async function(i){var left=await bookSlot(String(i.data||""),String(i.ora||""),normPl(i.giocatori),String(i.email||"").trim(),String(i.telefono||"").trim());return {prenotato:true,posti_liberi_nel_flight:left}}},
     {name:"iscrivi_gara",description:"Iscrive i giocatori a una gara della lista GARE (usa il suo id). Solo dopo che l'utente ha confermato il riepilogo. Restituisce se il cart è stato assegnato e i posti liberi, oppure un errore da spiegare.",
-     inputSchema:{type:"object",properties:{gara_id:{type:"string"},giocatori:pl,email:{type:"string",description:"email del giocatore 1"},telefono:{type:"string",description:"numero di telefono del giocatore 1 (obbligatorio)"},preferenza_orario:{type:"string",description:"HH:MM: orario di partenza, OBBLIGATORIO nelle gare non shotgun (scegline uno con posti liberi); non serve nelle shotgun"},cart:{type:"boolean",description:"true per prenotare un cart"},flight:{type:"integer",description:"numero del flight con posti liberi a cui unirsi; ometti per un nuovo flight"}},required:["gara_id","giocatori","email","telefono"]},
+     inputSchema:{type:"object",properties:{gara_id:{type:"string"},giocatori:plG,email:{type:"string",description:"email del giocatore 1"},telefono:{type:"string",description:"numero di telefono del giocatore 1 (obbligatorio)"},preferenza_orario:{type:"string",description:"HH:MM: orario di partenza, OBBLIGATORIO nelle gare non shotgun (scegline uno con posti liberi); non serve nelle shotgun"},cart:{type:"boolean",description:"true per prenotare un cart"},flight:{type:"integer",description:"numero del flight con posti liberi a cui unirsi; ometti per un nuovo flight"}},required:["gara_id","giocatori","email","telefono"]},
      execute:async function(i){var g=gareList().filter(function(x){return x.id===String(i.gara_id||"").replace(/^id\s*/,"")})[0];if(!g)throw new Error("Gara non trovata: usa un id della lista GARE.");
-       var r=await joinGara(g,normPl(i.giocatori),String(i.email||"").trim(),String(i.preferenza_orario||""),!!i.cart,+i.flight||0,String(i.telefono||"").trim());return {iscritto:true,flight:r.k,cart:!!r.slot,posti_liberi_nel_flight:r.free}}}
+       var r=await joinGara(g,normPlG(i.giocatori),String(i.email||"").trim(),String(i.preferenza_orario||""),!!i.cart,+i.flight||0,String(i.telefono||"").trim());return {iscritto:true,flight:r.k,cart:!!r.slot,posti_liberi_nel_flight:r.free}}}
   ];
 }
 function local(q){

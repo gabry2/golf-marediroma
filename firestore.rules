@@ -177,10 +177,18 @@ service cloud.firestore {
     function okEmail(e) { return e is string && e.size() <= 120 && e.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$'); }
     function okTel(t) { return t is string && t.matches('^[+0-9 ().\\/-]{8,25}$'); }
     function okName(x) { return x is string && x.size() >= 1 && x.size() <= 60; }
-    function okP(x) { return x is map && x.keys().hasOnly(['first', 'last']) && okName(x.first) && okName(x.last); }
-    function okPlayers(l) {
-      return l is list && l.size() >= 1 && l.size() <= 4 && okP(l[0])
-        && (l.size() < 2 || okP(l[1])) && (l.size() < 3 || okP(l[2])) && (l.size() < 4 || okP(l[3]));
+    // fg: giocatore "fuori gara" (gioca nella partenza ma non partecipa alla gara); vale solo nelle iscrizioni alle gare
+    function okP(x, fg) {
+      return x is map && x.keys().hasOnly(fg ? ['first', 'last', 'fg'] : ['first', 'last']) && okName(x.first) && okName(x.last)
+        && x.get('fg', true) == true;
+    }
+    function okPlayers(l, fg) {
+      return l is list && l.size() >= 1 && l.size() <= 4 && okP(l[0], fg)
+        && (l.size() < 2 || okP(l[1], fg)) && (l.size() < 3 || okP(l[2], fg)) && (l.size() < 4 || okP(l[3], fg));
+    }
+    function hasFg(l) {
+      return l[0].get('fg', false) == true || (l.size() > 1 && l[1].get('fg', false) == true)
+        || (l.size() > 2 && l[2].get('fg', false) == true) || (l.size() > 3 && l[3].get('fg', false) == true);
     }
     // si controllano le voci nuove o modificate (al massimo 2 per volta) e la dimensione dell'elenco
     function added(od) { return request.resource.data.list.removeAll(od.list); }
@@ -198,12 +206,13 @@ service cloud.firestore {
     }
     function okContact(x) {
       return x is map && x.keys().hasOnly(['slot', 'email', 'tel', 'players', 'at'])
-        && x.slot is string && teeId(x.slot) && okEmail(x.email) && okTel(x.tel) && okPlayers(x.players) && x.at is int;
+        && x.slot is string && teeId(x.slot) && okEmail(x.email) && okTel(x.tel) && okPlayers(x.players, false) && x.at is int;
     }
     function okIscr(x) {
       return x is map && x.keys().hasOnly(['gara', 'flight', 'players', 'email', 'tel', 'pref', 'cart', 'cartSlot', 'at'])
         && x.gara is string && x.gara.matches('^[A-Za-z0-9]{1,40}$') && x.flight is int
-        && okPlayers(x.players) && okEmail(x.email) && okTel(x.tel)
+        && okPlayers(x.players, true) && (!hasFg(x.players) || gara(x.gara).get('fuoriGara', false) == true)
+        && okEmail(x.email) && okTel(x.tel)
         && x.pref is string && x.pref.size() <= 5 && x.cart is bool
         && (x.cartSlot == null || (x.cartSlot is int && x.cartSlot >= 1 && x.cartSlot <= 3)) && x.at is int;
     }
