@@ -12,11 +12,11 @@
 //   ORA_PROVA       data e ora finta in formato ISO (solo per i test)
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldPath } from 'firebase-admin/firestore';
-import { roma, giornoRoma, giornoDopo, quandoTee, quandoGara, daInviare } from './orari.mjs';
+import { roma, giornoRoma, giornoDopo, giornoPrima, quandoTee, quandoGara, daInviare } from './orari.mjs';
+import { componi, SITO, TEL } from './email.mjs';
 
 const E = process.env;
-const SITO = 'https://gabry2.github.io/golf-marediroma/';
-const SEGRETERIA = '+39 06 913 3250';
+const SEGRETERIA = TEL;
 const ora = E.ORA_PROVA ? new Date(E.ORA_PROVA) : new Date();
 
 if (!E.FIRESTORE_EMULATOR_HOST && !E.FIREBASE_SERVICE_ACCOUNT) {
@@ -30,42 +30,46 @@ const db = getFirestore(app);
 
 // ---------- invio ----------
 let trasporto = null;
-async function invia(to, oggetto, righe) {
-  const testo = righe.map(([k, v]) => (k ? `${k}: ${v}` : v)).join('\n');
-  if (E.MAIL_DRYRUN) { console.log(JSON.stringify({ to, oggetto, righe })); return; }
+// m: { titolo, anteprima, intro, righe:[[etichetta, valore]], nota, bottoni:[{testo, link, pieno}], saluto } (vedi email.mjs)
+async function invia(to, oggetto, m) {
+  if (E.MAIL_DRYRUN) { console.log(JSON.stringify({ to, oggetto, righe: m.righe, titolo: m.titolo, nota: m.nota })); return; }
   if (E.SMTP_HOST) {
     if (!trasporto) {
       const nm = await import('nodemailer');
       trasporto = nm.default.createTransport({ host: E.SMTP_HOST, port: +(E.SMTP_PORT || 465), secure: +(E.SMTP_PORT || 465) === 465, auth: { user: E.SMTP_USER, pass: E.SMTP_PASS } });
     }
-    const html = '<div style="font-family:Georgia,serif;font-size:16px;color:#1b2a21;max-width:560px">'
-      + `<h2 style="color:#14502A;font-weight:600">${esc(oggetto)}</h2>`
-      + righe.map(([k, v]) => (k ? `<p style="margin:.4em 0"><strong>${esc(k)}:</strong> ${esc(v)}</p>` : `<p>${esc(v)}</p>`)).join('')
-      + `<p style="margin-top:1.5em;color:#5b6b61;font-size:14px">Golf Marediroma · Via Enna, 30 – 00040 Ardea (RM) · ${SEGRETERIA}</p></div>`;
-    await trasporto.sendMail({ from: E.MAIL_FROM || E.SMTP_USER, replyTo: E.MAIL_REPLYTO || 'segreteriasportiva@golfmarediroma.com', to, subject: oggetto, text: testo, html });
+    const { text, html } = componi(m);
+    await trasporto.sendMail({ from: E.MAIL_FROM || E.SMTP_USER, replyTo: E.MAIL_REPLYTO || 'segreteriasportiva@golfmarediroma.com', to, subject: oggetto, text, html });
     return;
   }
   // FormSubmit, come le conferme del sito: arriva al giocatore in copia e alla segreteria
   const st = await db.doc('settings/contatti').get();
   const club = (st.exists && st.data().to) || 'signor.gabriele22@gmail.com';
-  const body = { _subject: oggetto, _template: 'table', _captcha: 'false', _cc: to, _replyto: club, email: to };
-  for (const [k, v] of righe) body[k || 'Messaggio'] = v;
+  const body = { _subject: oggetto, _template: 'table', _captcha: 'false', _cc: to, _replyto: club, email: to, Messaggio: m.intro };
+  for (const [k, v] of m.righe || []) body[k] = v;
+  if (m.nota) body.Nota = m.nota;
   const r = await fetch(`https://formsubmit.co/ajax/${club}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', Origin: SITO.replace(/\/golf-marediroma\/$/, ''), Referer: SITO }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error('FormSubmit ' + r.status);
 }
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nomi = (pl) => (pl || []).map((p) => `${p.first || ''} ${p.last || ''}`.trim() + (p.fg ? ' (fuori gara)' : '')).filter((x) => x && x !== ' (fuori gara)').join(', ') || '—';
 const dLong = (ymd) => new Date(roma(ymd, '12:00')).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', weekday: 'long', day: 'numeric', month: 'long' });
 
 // Prova: con PROVA_A=indirizzo invia solo un'email di prova e si ferma
 if (E.PROVA_A) {
-  await invia(E.PROVA_A, 'Prova promemoria – Golf Marediroma', [
-    ['', 'Questa è un\'email di prova dei promemoria del Golf Marediroma.'],
-    ['Esempio', 'Promemoria: tee time domani alle 08:06'],
-    ['', 'Se la leggi, l\'invio funziona. Buon golf!'],
-  ]);
+  await invia(E.PROVA_A, 'Prova: promemoria tee time – Golf Marediroma', {
+    titolo: 'Ci vediamo domani alle 08:06',
+    anteprima: 'Email di prova: così arrivano i promemoria ai giocatori.',
+    intro: 'Questa è un\'email di prova: i giocatori ricevono i promemoria così. Le ricordiamo la Sua prenotazione al Golf Marediroma.',
+    righe: [['Giorno', 'giovedì 26 novembre'], ['Ora di partenza', '08:06'], ['Giocatori', 'Mario Rossi, Anna Bianchi']],
+    nota: `Se non può più venire, annulli dal sito entro le 19:00 di stasera, oppure chiami la segreteria al ${SEGRETERIA}.`,
+    bottoni: bottoniTee(),
+    saluto: 'Buona partita!',
+  });
   console.log('Email di prova inviata a ' + E.PROVA_A);
   process.exit(0);
+}
+function bottoniTee() {
+  return [{ testo: 'Gestisci la prenotazione', link: `${SITO}#tee-time`, pieno: true }, { testo: 'Come arrivare', link: `${SITO}#come-arrivare` }];
 }
 async function giaInviato(chiave) { return (await db.doc(`promemoria/${chiave}`).get()).exists; }
 async function segna(chiave, dati) { await db.doc(`promemoria/${chiave}`).set({ ...dati, inviato: ora.getTime() }); }
@@ -92,12 +96,19 @@ for (const doc of tt.docs) {
     const e = ((ct.exists && ct.data().list) || []).filter((x) => x && x.slot === id && x.email).pop();
     if (!e || !daInviare(ora, momento, inizio, +e.at || +v.at || 0)) continue;
     try {
-      await invia(e.email, `Promemoria: tee time ${ymd === oggi ? 'oggi' : 'domani'} alle ${hm} – Golf Marediroma`, [
-        ['', 'Le ricordiamo la Sua prenotazione al Golf Marediroma.'],
-        ['Giorno', dLong(ymd)], ['Ora di partenza', hm], ['Giocatori', nomi(e.players)],
-        ['Se non può più venire', `Annulli dalla pagina Prenota tee time del sito (${SITO}#tee-time) fino alle 19:00 del giorno prima, oppure chiami la segreteria al ${SEGRETERIA}.`],
-        ['', 'Buona partita!'],
-      ]);
+      const quando = ymd === oggi ? 'oggi' : 'domani';
+      const annullaEntro = roma(giornoPrima(ymd), '19:00');
+      await invia(e.email, `Promemoria: tee time ${quando} alle ${hm} – Golf Marediroma`, {
+        titolo: `Ci vediamo ${quando} alle ${hm}`,
+        anteprima: `Il Suo tee time al Golf Marediroma: ${dLong(ymd)}, partenza alle ${hm}.`,
+        intro: 'Le ricordiamo la Sua prenotazione al Golf Marediroma.',
+        righe: [['Giorno', dLong(ymd)], ['Ora di partenza', hm], ['Giocatori', nomi(e.players)]],
+        nota: ora < annullaEntro
+          ? `Se non può più venire, annulli dal sito entro le 19:00 di stasera, oppure chiami la segreteria al ${SEGRETERIA}.`
+          : `Se non può più venire, La preghiamo di avvisare la segreteria al ${SEGRETERIA}.`,
+        bottoni: bottoniTee(),
+        saluto: 'Buona partita!',
+      });
       await segna(chiave, { tipo: 'tee', slot: id, uid: v.by });
       inviati++;
     } catch (err) { errori++; console.error('Invio non riuscito', chiave, err.message); }
@@ -121,13 +132,16 @@ for (const g of gare.docs) {
     const e = mie[mie.length - 1], gioc = nomi(mie.flatMap((x) => x.players || []));
     const orario = G.shotgun ? `Shotgun alle ${G.from}` : (mie.map((x) => x.pref).filter(Boolean).join(', ') ? `Partenza alle ${mie.map((x) => x.pref).filter(Boolean).join(', ')}` : `Partenze dalle ${G.from}`);
     try {
-      await invia(e.email, `Promemoria: domani la gara «${G.name}» – Golf Marediroma`, [
-        ['', 'Le ricordiamo che domani gioca la gara al Golf Marediroma.'],
-        ['Gara', G.name], ['Giorno', dLong(G.date)], ['Orario', orario], ['Giocatori', gioc],
-        ...(mie.some((x) => x.cartSlot) ? [['Cart', `prenotato (cart n. ${mie.find((x) => x.cartSlot).cartSlot})`]] : []),
-        ['Per informazioni', `Chiami la segreteria al ${SEGRETERIA}.`],
-        ['', 'Le auguriamo una buona gara!'],
-      ]);
+      await invia(e.email, `Promemoria: domani la gara «${G.name}» – Golf Marediroma`, {
+        titolo: `Domani si gioca «${G.name}»`,
+        anteprima: `${dLong(G.date)}: ${orario.toLowerCase()}.`,
+        intro: 'Le ricordiamo che domani gioca la gara al Golf Marediroma.',
+        righe: [['Gara', G.name], ['Giorno', dLong(G.date)], ['Orario', orario], ['Giocatori', gioc],
+          ...(mie.some((x) => x.cartSlot) ? [['Cart', `prenotato (cart n. ${mie.find((x) => x.cartSlot).cartSlot})`]] : [])],
+        nota: `Per informazioni chiami la segreteria al ${SEGRETERIA}.`,
+        bottoni: [{ testo: 'Vedi la gara', link: `${SITO}#gare`, pieno: true }, { testo: 'Come arrivare', link: `${SITO}#come-arrivare` }],
+        saluto: 'Le auguriamo una buona gara!',
+      });
       await segna(chiave, { tipo: 'gara', gara: g.id, uid });
       inviati++;
     } catch (err) { errori++; console.error('Invio non riuscito', chiave, err.message); }
